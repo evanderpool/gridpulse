@@ -1,0 +1,337 @@
+{
+ "response": {
+  "total": "34",
+  "dateFormat": "YYYY-MM-DD\"T\"HH24",
+  "frequency": "hourly",
+  "data": [
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "0",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "GEO",
+    "type-name": "Geothermal",
+    "value": "708",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "7356",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "2234",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "OIL",
+    "type-name": "Petroleum",
+    "value": "46",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "-6831",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "17043",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "1140",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "2451",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "BAT",
+    "type-name": "Battery storage",
+    "value": "-255",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "7303",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "23811",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "4969",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "50",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "32539",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "0",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "17062",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "0",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "GEO",
+    "type-name": "Geothermal",
+    "value": "713",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "7364",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "2239",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "OIL",
+    "type-name": "Petroleum",
+    "value": "46",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "-7011",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "16211",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "1326",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "2286",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "BAT",
+    "type-name": "Battery storage",
+    "value": "-1362",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "6520",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "21381",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "4970",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "50",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "31669",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "4",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "18722",
+    "value-units": "megawatthours"
+   }
+  ],
+  "description": "Hourly net generation by balancing authority and energy source.  \n    Source: Form EIA-930\n    Product: Hourly Electric Grid Monitor"
+ },
+ "request": {
+  "command": "/v2/electricity/rto/fuel-type-data/data/",
+  "params": {
+   "api_key": "REDACTED",
+   "frequency": "hourly",
+   "data": [
+    "value"
+   ],
+   "facets": {
+    "respondent": [
+     "ERCO",
+     "CISO"
+    ]
+   },
+   "start": "2026-08-13T18",
+   "end": "2026-08-13T19",
+   "length": "60"
+  }
+ },
+ "apiVersion": "2.1.13",
+ "ExcelAddInVersion": "2.1.0"
+}

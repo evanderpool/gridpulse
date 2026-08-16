@@ -1,0 +1,273 @@
+{
+ "response": {
+  "total": "27",
+  "dateFormat": "YYYY-MM-DD\"T\"HH24",
+  "frequency": "hourly",
+  "data": [
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "BAT",
+    "type-name": "Battery storage",
+    "value": "1027",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "10815",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "38242",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "5000",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "54",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "255",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "UES",
+    "type-name": "Unknown energy storage",
+    "value": "-94",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "327",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T02",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "11716",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "BAT",
+    "type-name": "Battery storage",
+    "value": "732",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "10772",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "39395",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "5000",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "61",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "3708",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "UES",
+    "type-name": "Unknown energy storage",
+    "value": "-328",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "324",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T01",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "10319",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "BAT",
+    "type-name": "Battery storage",
+    "value": "602",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "COL",
+    "type-name": "Coal",
+    "value": "10713",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NG",
+    "type-name": "Natural Gas",
+    "value": "37293",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "NUC",
+    "type-name": "Nuclear",
+    "value": "4999",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "OTH",
+    "type-name": "Other",
+    "value": "61",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "9323",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "UES",
+    "type-name": "Unknown energy storage",
+    "value": "-278",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WAT",
+    "type-name": "Hydro",
+    "value": "226",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2025-07-01T00",
+    "respondent": "ERCO",
+    "respondent-name": "Electric Reliability Council of Texas, Inc.",
+    "fueltype": "WND",
+    "type-name": "Wind",
+    "value": "9364",
+    "value-units": "megawatthours"
+   }
+  ],
+  "description": "Hourly net generation by balancing authority and energy source.  \n    Source: Form EIA-930\n    Product: Hourly Electric Grid Monitor"
+ },
+ "request": {
+  "command": "/v2/electricity/rto/fuel-type-data/data/",
+  "params": {
+   "api_key": "REDACTED",
+   "frequency": "hourly",
+   "data": [
+    "value"
+   ],
+   "facets": {
+    "respondent": [
+     "ERCO"
+    ]
+   },
+   "start": "2025-07-01T00",
+   "end": "2025-07-01T02",
+   "length": "40"
+  }
+ },
+ "apiVersion": "2.1.13",
+ "ExcelAddInVersion": "2.1.0"
+}

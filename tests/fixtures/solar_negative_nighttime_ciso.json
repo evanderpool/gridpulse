@@ -1,0 +1,474 @@
+{
+ "response": {
+  "total": "49",
+  "dateFormat": "YYYY-MM-DD\"T\"HH24",
+  "frequency": "hourly",
+  "data": [
+   {
+    "period": "2026-08-14T00",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "15233",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T23",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "16162",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T22",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "16348",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T21",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "17068",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T20",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "17754",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "17043",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "16211",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T17",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "15363",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T16",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "13500",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T15",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "7291",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T14",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "740",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T13",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-58",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T12",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-56",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T11",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T10",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T09",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T08",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T07",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T06",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-57",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T05",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-59",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T04",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-60",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T03",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "901",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T02",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "6410",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T01",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "12163",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-13T00",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "14573",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T23",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "16440",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T22",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "17451",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T21",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "18725",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T20",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "19738",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T19",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "19686",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T18",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "18609",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T17",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "15936",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T16",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "12172",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T15",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "6829",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T14",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "871",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T13",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T12",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T11",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T10",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T09",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T08",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T07",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-33",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T06",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-32",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T05",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-35",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T04",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "-41",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T03",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "562",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T02",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "4288",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T01",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "10166",
+    "value-units": "megawatthours"
+   },
+   {
+    "period": "2026-08-12T00",
+    "respondent": "CISO",
+    "respondent-name": "California Independent System Operator",
+    "fueltype": "SUN",
+    "type-name": "Solar",
+    "value": "12447",
+    "value-units": "megawatthours"
+   }
+  ],
+  "description": "Hourly net generation by balancing authority and energy source.  \n    Source: Form EIA-930\n    Product: Hourly Electric Grid Monitor"
+ },
+ "request": {
+  "command": "/v2/electricity/rto/fuel-type-data/data/",
+  "params": {
+   "api_key": "REDACTED",
+   "frequency": "hourly",
+   "data": [
+    "value"
+   ],
+   "facets": {
+    "respondent": [
+     "CISO"
+    ],
+    "fueltype": [
+     "SUN"
+    ]
+   },
+   "start": "2026-08-12T00",
+   "end": "2026-08-14T00",
+   "length": "60"
+  }
+ },
+ "apiVersion": "2.1.13",
+ "ExcelAddInVersion": "2.1.0"
+}

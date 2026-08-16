@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gridpulse"
+version = "0.0.1"
+description = "Hourly US electricity demand and fuel mix from the EIA API, through a documented deterministic conversion pipeline, to a self-refreshing report."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Erick Vanderpool" }]
+keywords = ["data-engineering", "eia", "electricity", "pipeline", "polars"]
+
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "polars>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.urls]
+Repository = "https://github.com/evanderpool/gridpulse"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Pre-ship gate is deliberately small (red-team: cap the ceremony).
+# D-rules (docstring enforcement) turn on at MVP ship per the code standards.
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

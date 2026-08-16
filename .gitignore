@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+# bronze/silver/gold live on the orphan `data` branch, never here
+data/
