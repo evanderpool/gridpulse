@@ -43,5 +43,10 @@ src = ["src", "tests"]
 # D-rules (docstring enforcement) turn on at MVP ship per the code standards.
 select = ["E", "F", "I", "W"]
 
+[tool.ruff.lint.per-file-ignores]
+# report.py embeds the page's JavaScript as string constants; JS template
+# literals don't wrap at Python's line length without changing readability.
+"src/gridpulse/report.py" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
