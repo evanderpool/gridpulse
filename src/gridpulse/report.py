@@ -2,13 +2,13 @@
 
 Architecture: every number is computed at BUILD TIME in analyze.py and
 embedded as one JSON blob; the page's JavaScript only selects, formats, and
-draws. GSAP is VENDORED INLINE (assets/gsap.min.js) so motion never breaks
-the zero-external-requests rule. No backend, no API calls.
+draws. No backend, no API calls, no external assets.
 
 UX model (operator-directed): a top-nav single-page dashboard — one focused
-view per section, Title Case labels, a '?' glossary overlay, GSAP-animated
-view transitions / KPI count-ups / chart draw-ins (disabled under
-prefers-reduced-motion), an Ask the Analyst tab with a real grounded sample
+view per section, Title Case labels, soft rounded "bubbly corporate"
+styling, NO animations (operator rule: hover feedback is instant, nothing
+moves on its own), region hover cards everywhere a region appears,
+clickable KPI tiles, an Ask the Analyst tab with a real grounded sample
 exchange, and a Case Study view written for recruiters.
 """
 
@@ -35,8 +35,6 @@ REGION_LABELS = {"CISO": "California", "ERCO": "Texas",
 # Set when the companion Streamlit app has its public URL; the Ask view then
 # gains a launch button and live embed.
 STREAMLIT_URL = ""
-
-GSAP_PATH = Path(__file__).parent / "assets" / "gsap.min.js"
 
 CSS = """
 :root { color-scheme: light;
@@ -85,13 +83,14 @@ nav { display:flex; gap:0.1rem; flex-wrap:wrap; }
 .sublabel { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.11em;
   color:var(--muted); margin-right:0.2rem; }
 .rangebtn { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
-  border-radius:999px; padding:3px 11px; font-size:0.78rem; cursor:pointer; font-family:inherit;
-  transition:background 0.15s, color 0.15s; }
+  border-radius:999px; padding:4px 13px; font-size:0.78rem; cursor:pointer;
+  font-family:inherit; }
+.rangebtn:hover { border-color:var(--axis); color:var(--ink); }
 .rangebtn.active { background:var(--ink); color:var(--page); border-color:var(--ink); }
 .chip { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
-  border-radius:999px; padding:3px 11px; font-size:0.78rem; cursor:pointer;
-  font-family:inherit; display:inline-flex; align-items:center; gap:6px;
-  transition:opacity 0.15s; }
+  border-radius:999px; padding:4px 13px; font-size:0.78rem; cursor:pointer;
+  font-family:inherit; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover { border-color:var(--axis); color:var(--ink); }
 .chip .dot { width:8px; height:8px; border-radius:50%; }
 .chip.off { opacity:0.35; }
 
@@ -102,21 +101,41 @@ nav { display:flex; gap:0.1rem; flex-wrap:wrap; }
 .view.active { display:flex; }
 .viewhead h1 { font-size:1.5rem; margin:0 0 0.25rem; letter-spacing:-0.015em; }
 .viewhead p { margin:0; color:var(--ink2); max-width:72ch; font-size:0.92rem; }
-.card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  padding:1.05rem 1.2rem 0.85rem; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:18px;
+  padding:1.15rem 1.3rem 0.95rem;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 10px 28px -22px rgba(0,0,0,0.28); }
+.card:hover { box-shadow:0 2px 4px rgba(0,0,0,0.05), 0 16px 36px -20px rgba(0,0,0,0.32); }
 .card h2 { font-size:0.98rem; margin:0 0 0.15rem; }
 .card .sub { font-size:0.8rem; color:var(--ink2); margin:0 0 0.5rem; }
 .hero { font-size:1.12rem; line-height:1.55; max-width:62ch; }
 .hero b { font-variant-numeric:tabular-nums; }
-.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; }
-.tile { background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  padding:0.8rem 1rem 0.7rem; border-top:3px solid var(--tilecolor, var(--axis)); }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.8rem; }
+.tile { background:var(--surface); border:1px solid var(--border); border-radius:18px;
+  padding:0.9rem 1.05rem 0.8rem; border-top:4px solid var(--tilecolor, var(--axis));
+  cursor:pointer; position:relative;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 10px 28px -22px rgba(0,0,0,0.28); }
+.tile { background:color-mix(in srgb, var(--tilecolor, var(--axis)) 6%, var(--surface)); }
+.tile:hover { border-color:var(--tilecolor);
+  box-shadow:0 2px 5px rgba(0,0,0,0.06), 0 18px 38px -20px rgba(0,0,0,0.35); }
+.tile .go { position:absolute; top:0.7rem; right:0.9rem; color:var(--tilecolor);
+  font-weight:700; opacity:0; font-size:0.95rem; }
+.tile:hover .go { opacity:1; }
 .tile .v { font-size:1.55rem; font-weight:700; line-height:1.1;
   font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
 .tile .v small { font-size:0.85rem; font-weight:600; color:var(--ink2); }
 .tile .k { font-size:0.74rem; color:var(--ink2); margin-top:3px; }
 .tile .d { font-size:0.74rem; margin-top:4px; font-variant-numeric:tabular-nums;
   font-weight:600; }
+.hovercard { position:fixed; z-index:60; width:270px; pointer-events:none;
+  display:none; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:0.85rem 1rem;
+  box-shadow:0 6px 16px rgba(0,0,0,0.10), 0 24px 48px -24px rgba(0,0,0,0.35); }
+.hovercard .hc-title { font-weight:700; display:flex; align-items:center; gap:8px;
+  margin-bottom:0.35rem; }
+.hovercard .hc-row { display:flex; justify-content:space-between; gap:10px;
+  font-size:0.78rem; color:var(--ink2); padding:2px 0; }
+.hovercard .hc-row b { color:var(--ink); font-variant-numeric:tabular-nums;
+  text-align:right; }
 .up { color:var(--goodtext); } .down { color:#c0392b; }
 .findings { margin:0.2rem 0 0.4rem; padding-left:1.15rem; }
 .findings li { margin:0.45rem 0; font-size:0.9rem; max-width:78ch; }
@@ -196,12 +215,7 @@ const PRESET_LABEL = {"7d":"the Last 7 Days","30d":"the Last 30 Days","90d":"the
   "6m":"the Last 6 Months","12m":"the Last 12 Months","all":"Everything on Record"};
 let preset = "90d";
 let active = new Set(REGIONS.filter(r => (D.findings[preset].regions||{})[r]));
-// ?static=1 disables all motion — used for screenshots/previews; also
-// honors the user's reduced-motion setting.
-const MOTION = !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  && !new URLSearchParams(location.search).has("static")
-  && typeof gsap !== "undefined";
-let firstRender = true;
+
 
 const W=760, H=240, PL=56, PR=100, PT=14, PB=26, IW=W-PL-PR, IH=H-PT-PB;
 function fmtGW(mwh){ return (mwh/1000).toLocaleString(undefined,{maximumFractionDigits:1}); }
@@ -254,24 +268,9 @@ function drawChart(mount, series, labels, unit){
     `${xt}${lines}${ends}` +
     `<line class="crosshair" x1="0" y1="${PT}" x2="0" y2="${PT+IH}" style="display:none"/></svg>` +
     `<div class="tooltip" style="display:none"></div>`;
-  // Draw-in animation: real dash pattern is restored after the reveal so
-  // dashed series keep their style.
-  if (MOTION){
-    mount.querySelectorAll("polyline").forEach((pl, i) => {
-      const len = pl.getTotalLength ? pl.getTotalLength() : 0;
-      if (!len) return;
-      const wantDash = pl.dataset.dash;
-      pl.style.strokeDasharray = len;
-      pl.style.strokeDashoffset = len;
-      gsap.to(pl, {strokeDashoffset:0, duration:0.9, delay:i*0.12, ease:"power2.out",
-        onComplete(){ pl.style.strokeDasharray = wantDash ? wantDash.replace(" ", ",") : "none";
-                      pl.style.strokeDashoffset = 0; }});
-    });
-  } else {
-    mount.querySelectorAll("polyline[data-dash]").forEach(pl => {
-      pl.style.strokeDasharray = pl.dataset.dash.replace(" ", ",");
-    });
-  }
+  mount.querySelectorAll("polyline[data-dash]").forEach(pl => {
+    pl.style.strokeDasharray = pl.dataset.dash.replace(" ", ",");
+  });
   const svg = mount.querySelector("svg"), cross = mount.querySelector(".crosshair"),
         tip = mount.querySelector(".tooltip");
   svg.addEventListener("mousemove", ev => {
@@ -307,9 +306,9 @@ function buildFindings(){
   for (const r of regs){
     const s = f.regions[r], name = NAMES[r];
     const dPrev = s.demand_vs_prev_pct, dYoy = s.demand_vs_yoy_pct;
-    out.tiles += `<div class="tile" style="--tilecolor:var(${VARS[r]})">` +
-      `<div class="v"><span class="countup" data-val="${(s.avg_demand/1000).toFixed(1)}">` +
-      `${fmtGW(s.avg_demand)}</span> <small>GWh</small></div>` +
+    out.tiles += `<div class="tile" data-region="${r}" title="View ${name} in Usage" ` +
+      `style="--tilecolor:var(${VARS[r]})"><span class="go">→</span>` +
+      `<div class="v">${fmtGW(s.avg_demand)} <small>GWh</small></div>` +
       `<div class="k">${name} — Average Hourly Use</div>` +
       (dPrev == null ? "" : `<div class="d ${cls(dPrev)}">${dPrev>=0?"▲":"▼"} ` +
         `${Math.abs(dPrev).toFixed(1)}% vs the window before</div>`) + `</div>`;
@@ -342,8 +341,6 @@ function fillList(id, items, max){
   if (!el) return;
   if (!items.length){ el.innerHTML = "<li>No data in this window.</li>"; return; }
   el.innerHTML = (max ? items.slice(0, max) : items).map(s => `<li>${s}</li>`).join("");
-  if (MOTION && firstRender) gsap.from(el.children, {opacity:0, y:8, stagger:0.05,
-    duration:0.35, ease:"power1.out", clearProps:"all"});
 }
 
 function heroSentence(){
@@ -402,21 +399,6 @@ function renderDuck(){
   ], rows.map(r => r[0].slice(11)+":00"), "MWh");
 }
 
-function countUps(){
-  // Animate once on first load only; filter changes update instantly, and
-  // the animation always snaps to the exact final value.
-  if (!MOTION || !firstRender) return;
-  document.querySelectorAll(".countup").forEach(el => {
-    const target = parseFloat(el.dataset.val);
-    const final = el.textContent;
-    const obj = {v:0};
-    gsap.to(obj, {v:target, duration:0.8, ease:"power2.out",
-      onUpdate(){ el.textContent = obj.v.toLocaleString(undefined,
-        {minimumFractionDigits:1, maximumFractionDigits:1}); },
-      onComplete(){ el.textContent = final; }});
-  });
-}
-
 function download(name, text){
   const a = document.createElement("a");
   a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(text);
@@ -427,7 +409,6 @@ function renderAll(){
   const f = buildFindings();
   document.getElementById("tiles").innerHTML = f.tiles ||
     '<div class="tile"><div class="v">—</div><div class="k">No Data in Window</div></div>';
-  countUps();
   fillList("find-top", [...f.usage, ...f.share, ...f.duck], 3);
   fillList("find-usage", f.usage);
   fillList("find-share", f.share);
@@ -440,7 +421,6 @@ function renderAll(){
   renderTrend("trend-share2", 2, "%");
   renderProfile();
   renderDuck();
-  firstRender = false;
 }
 
 /* ---- Navigation ---- */
@@ -451,9 +431,6 @@ function show(view){
     b.classList.toggle("active", b.dataset.view === view));
   history.replaceState(null, "", "#" + view);
   window.scrollTo({top:0});
-  const el = document.querySelector(`.view[data-view="${view}"]`);
-  if (MOTION && el) gsap.from(el.querySelectorAll(".viewhead, .card, .tiles"),
-    {opacity:0, y:16, stagger:0.07, duration:0.45, ease:"power2.out", clearProps:"all"});
 }
 document.querySelectorAll("[data-view]").forEach(b => {
   if (b.classList.contains("view")) return;
@@ -494,17 +471,71 @@ document.addEventListener("keydown", ev => {
   if (ev.key === "Escape") overlay.classList.remove("open");
 });
 
+/* ---- Region Hover Cards (instant, no motion) ---- */
+const REGION_INFO = {
+  CISO: {op:"CAISO", serves:"≈ 32 million people", note:"Solar-heavy — home of the duck curve"},
+  ERCO: {op:"ERCOT", serves:"≈ 27 million people", note:"Wind + solar build-out leader"},
+  MISO: {op:"MISO", serves:"≈ 45 million people", note:"15 states, Minnesota to Louisiana"},
+  PJM:  {op:"PJM", serves:"≈ 65 million people", note:"13 states — the biggest grid here"},
+};
+const hc = document.getElementById("hovercard");
+function hovercardHTML(r){
+  const info = REGION_INFO[r];
+  const s = (D.findings[preset].regions || {})[r];
+  let rows = `<div class="hc-row"><span>Grid operator</span><b>${info.op}</b></div>` +
+             `<div class="hc-row"><span>Serves</span><b>${info.serves}</b></div>`;
+  if (s){
+    rows += `<div class="hc-row"><span>Average use</span><b>${fmtGW(s.avg_demand)} GWh/hr</b></div>`;
+    if (s.avg_share != null)
+      rows += `<div class="hc-row"><span>Wind + solar</span><b>${s.avg_share.toFixed(1)}%</b></div>`;
+    if (s.demand_vs_yoy_pct != null)
+      rows += `<div class="hc-row"><span>Use vs last year</span>` +
+              `<b class="${cls(s.demand_vs_yoy_pct)}">${s.demand_vs_yoy_pct >= 0 ? "▲" : "▼"} ` +
+              `${Math.abs(s.demand_vs_yoy_pct).toFixed(1)}%</b></div>`;
+  }
+  return `<div class="hc-title"><span class="dot" style="background:var(${VARS[r]})"></span>` +
+    `${NAMES[r]}</div>${rows}` +
+    `<div class="hc-row" style="margin-top:4px"><span>${info.note}</span></div>`;
+}
+function moveHovercard(ev){
+  const pad = 14, w = 270, h = hc.offsetHeight || 160;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+  hc.style.left = x + "px"; hc.style.top = y + "px";
+}
+document.addEventListener("mouseover", ev => {
+  const el = ev.target.closest("[data-region]");
+  if (!el || !REGION_INFO[el.dataset.region]){ hc.style.display = "none"; return; }
+  hc.innerHTML = hovercardHTML(el.dataset.region);
+  hc.style.display = "block";
+  moveHovercard(ev);
+});
+document.addEventListener("mousemove", ev => {
+  if (hc.style.display === "block" && ev.target.closest("[data-region]")) moveHovercard(ev);
+});
+document.addEventListener("mouseout", ev => {
+  if (!ev.relatedTarget || !ev.relatedTarget.closest ||
+      !ev.relatedTarget.closest("[data-region]")) hc.style.display = "none";
+});
+
+/* ---- Clickable KPI Tiles → that region's Usage view ---- */
+document.getElementById("tiles").addEventListener("click", ev => {
+  const tile = ev.target.closest(".tile[data-region]");
+  if (!tile) return;
+  const r = tile.dataset.region;
+  active = new Set([r]);
+  document.querySelectorAll(".chip[data-region]").forEach(c =>
+    c.classList.toggle("off", c.dataset.region !== r));
+  hc.style.display = "none";
+  renderAll();
+  show("usage");
+});
+
 const initial = (location.hash || "#overview").slice(1);
 show(document.querySelector(`.view[data-view="${initial}"]`) ? initial : "overview");
 renderAll();
 """
-
-
-def _gsap_source() -> str:
-    """The vendored GSAP core (inlined so the page makes zero external requests)."""
-    if GSAP_PATH.exists():
-        return GSAP_PATH.read_text(encoding="utf-8")
-    return ""  # motion degrades gracefully; MOTION flag guards every call
 
 
 def build_report(conn: sqlite3.Connection) -> str:
@@ -851,11 +882,11 @@ WHERE region='ERCO' AND period_utc LIKE '2026-08%';</div>
   </div>
 </div>
 
+<div class="hovercard" id="hovercard"></div>
 <footer>GridPulse v{__version__} · generated {generated} ·
 <a href="https://github.com/evanderpool/gridpulse">source &amp; docs</a> ·
 data: US Energy Information Administration (EIA) open-data API v2 ·
-built by Erick Vanderpool · animation: GSAP (vendored)</footer>
-<script>{_gsap_source()}</script>
+built by Erick Vanderpool</footer>
 <script>{JS.replace("__DATA__", data_json)}</script>
 </body></html>'''
 
