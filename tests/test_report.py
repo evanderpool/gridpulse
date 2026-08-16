@@ -91,3 +91,15 @@ def test_month_start_windows():
     assert _month_start(now, 2) == "2025-12-01T00"
     assert _month_start(now, 13) == "2025-01-01T00"
     assert _month_start(now, 0) == "2026-02-01T00"
+
+
+def test_offline_commands_run_without_the_key(tmp_path, monkeypatch):
+    # transform/derive/report never touch the API — a missing key must not
+    # stop them (found live: the first CI run died at transform because the
+    # secret was scoped to the ingest step, correctly).
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("EIA_API_KEY", raising=False)
+    from gridpulse.cli import main
+    assert main(["transform"]) == 0
+    assert main(["derive"]) == 0
+    assert main(["report", "--out", "s/index.html"]) == 0

@@ -66,14 +66,17 @@ class Settings:
         return self.data_dir / "gridpulse.db"
 
     @classmethod
-    def load(cls, data_dir: Path | str = "data") -> "Settings":
+    def load(cls, data_dir: Path | str = "data", need_key: bool = True) -> "Settings":
         """Build settings from the environment (plus ``.env`` fallback).
 
-        Raises a message that states the fix path when the key is missing.
+        ``need_key=False`` is for the offline stages (transform, derive,
+        report) — they read only local storage, so a missing key must not
+        stop them (CI passes the secret to the ingest step alone). When the
+        key IS required and missing, the error states the fix path.
         """
         env = {**_read_dotenv(Path(".env")), **os.environ}
         api_key = env.get("EIA_API_KEY", "")
-        if not api_key:
+        if not api_key and need_key:
             raise RuntimeError(
                 "EIA_API_KEY is not set. Fix: add EIA_API_KEY=<your key> to a "
                 ".env file in the repo root (gitignored) or export it in the "

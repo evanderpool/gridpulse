@@ -286,7 +286,9 @@ def main(argv: list[str] | None = None) -> int:
                             help="calendar months of history (default 13, for YoY)")
     args = parser.parse_args(argv)
 
-    settings = Settings.load()
+    # Only commands that call the API need the key; transform/derive/report
+    # must run keyless (CI scopes the secret to the ingest step alone).
+    settings = Settings.load(need_key=args.command in ("ingest", "backfill"))
     if args.command == "ingest":
         datasets = DATASETS if args.dataset == "both" else (args.dataset,)
         return cmd_ingest(settings, args.start, args.end, datasets=datasets)
