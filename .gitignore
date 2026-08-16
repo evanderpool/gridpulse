@@ -7,3 +7,4 @@ __pycache__/
 dist/
 # bronze/silver/gold live on the orphan `data` branch, never here
 data/
+_site/

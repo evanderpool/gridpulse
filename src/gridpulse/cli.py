@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import dataclasses
 import logging
 import secrets
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from .client import EiaClient, PullBudgetExceeded, write_bronze
 from .config import Settings
@@ -66,15 +68,43 @@ def _log(run_id: str, stage: str, **fields: object) -> None:
 
 DATASETS = ("demand", "fuelmix")
 
+# Incremental refetch overlap: EIA revises past hours for up to ~48h, so the
+# auto window re-pulls that span and lets latest-fetch-wins absorb revisions.
+REVISION_OVERLAP_HOURS = 48
+FIRST_RUN_DAYS = 7
+HOUR_FMT = "%Y-%m-%dT%H"
+
+
+def auto_window(settings: Settings) -> tuple[str, str]:
+    """The incremental fetch window: last stored hour minus overlap → now.
+
+    An empty database gets a first-run window of {FIRST_RUN_DAYS} days —
+    small enough for the pull budget, enough for the report to say something.
+    """
+    with contextlib.closing(connect(settings.db_path)) as conn:
+        latest = conn.execute("SELECT MAX(period_utc) FROM demand_hourly").fetchone()[0]
+    now = datetime.now(timezone.utc)
+    if latest:
+        start_dt = datetime.fromisoformat(latest) - timedelta(hours=REVISION_OVERLAP_HOURS)
+    else:
+        start_dt = now - timedelta(days=FIRST_RUN_DAYS)
+    return start_dt.strftime(HOUR_FMT), now.strftime(HOUR_FMT)
+
 
 def cmd_ingest(
     settings: Settings,
-    start: str,
-    end: str,
+    start: str | None = None,
+    end: str | None = None,
     client: EiaClient | None = None,
     datasets: tuple[str, ...] = DATASETS,
 ) -> int:
-    """Fetch a window of each requested dataset and persist verbatim to bronze."""
+    """Fetch a window of each requested dataset and persist verbatim to bronze.
+
+    With no explicit window, fetches incrementally since the last stored hour
+    (minus the revision overlap) — the shape every scheduled run uses.
+    """
+    if start is None or end is None:
+        start, end = auto_window(settings)
     run_id = _run_id()
     t0 = time.monotonic()
     own_client = client is None
@@ -188,6 +218,50 @@ def _run_row(
     )
 
 
+def cmd_report(settings: Settings, out: Path) -> int:
+    """Render the static HTML report from the database (never the API)."""
+    from .report import write_report
+
+    run_id = _run_id()
+    t0 = time.monotonic()
+    with contextlib.closing(connect(settings.db_path)) as conn:
+        path = write_report(conn, out)
+        record_run(conn, _run_row(run_id, "report", t0=t0))
+    _log(run_id, "report", out=str(path))
+    return 0
+
+
+def cmd_backfill(settings: Settings, months: int) -> int:
+    """One-time history load: month-sized windows, oldest first, then rebuild.
+
+    Each month runs as its own budgeted ingest (~7 requests: 1 demand page +
+    ~6 fuel-mix pages), so the per-window cap stays meaningful. The raise
+    over the default budget is deliberate and logged — this is the one
+    command the pull-budget design expects to be run once, by a human.
+    """
+    run_id = _run_id()
+    per_window = dataclasses.replace(settings, max_requests_per_run=12)
+    _log(run_id, "backfill", months=months,
+         note="deliberate budget raise to 12 requests per month-window")
+    now = datetime.now(timezone.utc)
+    for back in range(months, 0, -1):
+        w_start = _month_start(now, back)
+        w_end = _month_start(now, back - 1)
+        _log(run_id, "backfill", window=f"{w_start}->{w_end}")
+        cmd_ingest(per_window, w_start, w_end)
+    cmd_transform(settings)
+    cmd_derive(settings)
+    return 0
+
+
+def _month_start(now: datetime, months_back: int) -> str:
+    """First hour of the calendar month ``months_back`` months before now."""
+    year, month = now.year, now.month - months_back
+    while month <= 0:
+        year, month = year - 1, month + 12
+    return f"{year:04d}-{month:02d}-01T00"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point for ``gridpulse`` / ``python -m gridpulse``."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -197,13 +271,19 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="gridpulse")
     sub = parser.add_subparsers(dest="command", required=True)
     p_ingest = sub.add_parser("ingest", help="fetch a window of each dataset into bronze")
-    p_ingest.add_argument("--start", required=True, help="UTC hour, e.g. 2026-08-13T00")
-    p_ingest.add_argument("--end", required=True, help="UTC hour, e.g. 2026-08-14T00")
+    p_ingest.add_argument("--start", help="UTC hour, e.g. 2026-08-13T00 "
+                                          "(omit both for the incremental auto window)")
+    p_ingest.add_argument("--end", help="UTC hour, e.g. 2026-08-14T00")
     p_ingest.add_argument("--dataset", choices=[*DATASETS, "both"], default="both",
                           help="which dataset(s) to fetch (default: both)")
     sub.add_parser("transform", help="convert bronze into SQLite (idempotent)")
     sub.add_parser("derive", help="recompute gold metrics from silver "
                                   "(backend via GRIDPULSE_BACKEND, default polars)")
+    p_report = sub.add_parser("report", help="render the static HTML report from the DB")
+    p_report.add_argument("--out", default="_site/index.html", help="output path")
+    p_backfill = sub.add_parser("backfill", help="one-time history load, month windows")
+    p_backfill.add_argument("--months", type=int, default=13,
+                            help="calendar months of history (default 13, for YoY)")
     args = parser.parse_args(argv)
 
     settings = Settings.load()
@@ -212,4 +292,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_ingest(settings, args.start, args.end, datasets=datasets)
     if args.command == "derive":
         return cmd_derive(settings)
+    if args.command == "report":
+        return cmd_report(settings, Path(args.out))
+    if args.command == "backfill":
+        return cmd_backfill(settings, args.months)
     return cmd_transform(settings)

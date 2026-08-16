@@ -1,16 +1,22 @@
 # GridPulse
 
+[![CI](https://github.com/evanderpool/gridpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/evanderpool/gridpulse/actions/workflows/ci.yml)
+[![Pipeline](https://github.com/evanderpool/gridpulse/actions/workflows/pipeline.yml/badge.svg)](https://github.com/evanderpool/gridpulse/actions/workflows/pipeline.yml)
+
+**▶ Live report: https://evanderpool.github.io/gridpulse/**
+
 **A live view of the U.S. electricity grid** — hourly demand and fuel mix for
 four major grid regions (ERCOT, CAISO, MISO, PJM), pulled from the
 [EIA open-data API v2](https://www.eia.gov/opendata/), tamed by a documented
 deterministic conversion tool, and published as a self-refreshing report.
 
-> **Status: Phase 1 shipped — the demand vertical slice is live.** Ingest →
-> bronze → validate → convert → SQLite works against the real API, idempotency
-> is proven by test, and the slice has passed two sequential adversarial
-> reviews (logic + code) with every finding fixed and pinned as a regression
-> test. Phase 2 (full conversion suite) is next. This README was written
-> before the code on purpose: it is the spec, and it is kept current.
+> **Status: MVP — phases 0–3 shipped.** The full pipeline runs on a 2×/day
+> GitHub Actions cron: incremental ingest → bronze (orphan `data` branch) →
+> validated, quality-flagged silver → gold metrics → the static report above,
+> republished to Pages every run. Every phase passed sequential adversarial
+> reviews (logic + code) with all findings fixed and pinned as regression
+> tests. This README was written before the code on purpose: it is the spec,
+> and it is kept current.
 
 ## The three questions
 
@@ -66,9 +72,9 @@ src/gridpulse/
     derive.py        [Phase 2] renewable share, net load, ramp rate
     pipeline.py      the one public conversion entry point
   storage.py         bronze reader, silver upserts, quarantine, run ledger
-  analyze.py         [Phase 3] gold aggregates for the report
-  cli.py             ingest --dataset · transform · derive
-                     (report/backfill arrive Phase 3)
+  analyze.py         gold aggregates: the three questions, answered in SQL
+  report.py          the static HTML report (reads the DB, never the API)
+  cli.py             ingest --dataset · transform · derive · report · backfill
 ```
 
 ## Design decisions
@@ -110,8 +116,8 @@ Captured during pre-build validation; each is a named test fixture in
 |---|---|---|
 | 0 | Repo skeleton, validated source, fixtures, CI | ✅ 2026-08-15 |
 | 1 | Vertical slice: ingest → bronze → validate → convert → SQLite, idempotency proven by test; two adversarial review passes applied + pinned | ✅ 2026-08-15 |
-| 2 | Full conversion suite, quarantine, metrics ledger | |
-| 3 | Gold marts, HTML report, Actions cron, Pages — **MVP ship** | |
+| 2 | Full conversion suite, quarantine, metrics ledger; quality policy live (negative solar flagged, battery charge named); swappable Polars backend behind per-engine contract tests | ✅ 2026-08-16 |
+| 3 | Gold marts, HTML report, Actions cron (2×/day), Pages — **MVP ship**, `v1.0-baseline` tagged | ✅ 2026-08-16 |
 | 4+ | Stretch, strictly in order: Streamlit dashboard → quality panel → pandas backend → weather join → AI notes → suggestion engine | |
 
 ## Running locally
