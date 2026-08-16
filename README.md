@@ -66,8 +66,9 @@ src/gridpulse/
     derive.py        [Phase 2] renewable share, net load, ramp rate
     pipeline.py      the one public conversion entry point
   storage.py         bronze reader, silver upserts, quarantine, run ledger
-  analyze.py         [Phase 3] gold aggregates
-  cli.py             ingest · transform (report/backfill arrive Phase 3)
+  analyze.py         [Phase 3] gold aggregates for the report
+  cli.py             ingest --dataset · transform · derive
+                     (report/backfill arrive Phase 3)
 ```
 
 ## Design decisions
@@ -117,9 +118,10 @@ Captured during pre-build validation; each is a named test fixture in
 
 ```
 pip install -e .[dev]
-pytest                                        # fully offline — 40+ tests
-gridpulse ingest --start 2026-08-14T00 --end 2026-08-15T00
+pytest                                        # fully offline — 60+ tests
+gridpulse ingest --start 2026-08-14T00 --end 2026-08-15T00   # both datasets
 gridpulse transform                           # idempotent; re-run freely
+gridpulse derive                              # silver → gold metrics
 ```
 
 An EIA API key (free) goes in `.env` (gitignored) as `EIA_API_KEY=...` —

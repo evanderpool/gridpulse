@@ -88,7 +88,7 @@ def convert_fuelmix(bronze_docs: list[dict]) -> tuple[list[FuelMixRecord], list[
             period_utc=parse_eia_period(row.period).isoformat(),
             fueltype=row.fueltype,
             generation_mwh=row.value,
-            quality_flags=",".join(generation_flags(row.value)),
+            quality_flags=",".join(generation_flags(row.value, row.fueltype)),
             fetched_at=fetched_at,
         )
 

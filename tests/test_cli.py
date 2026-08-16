@@ -58,7 +58,7 @@ def test_full_pipeline_end_to_end(tmp_path, demand_payload):
     ).fetchone()[0]
     assert share == 0.2
     stages = [r[0] for r in conn.execute("SELECT stage FROM pipeline_runs ORDER BY stage")]
-    assert stages == ["derive", "ingest", "transform"]
+    assert stages == ["derive", "ingest", "transform_demand", "transform_fuelmix"]
 
     # Transform + derive again: silver and gold must not move, and the
     # ledger must SEE the no-op (0 upserted).
@@ -69,11 +69,12 @@ def test_full_pipeline_end_to_end(tmp_path, demand_payload):
     after = (table_checksum(conn, "demand_hourly"), table_checksum(conn, "fuelmix_hourly"),
              table_checksum(conn, "metrics_hourly"))
     assert after == before
-    last_upserted = conn.execute(
-        "SELECT rows_upserted FROM pipeline_runs WHERE stage='transform' "
-        "ORDER BY started_at DESC LIMIT 1"
-    ).fetchone()[0]
-    assert last_upserted == 0
+    for stage in ("transform_demand", "transform_fuelmix"):
+        last_upserted = conn.execute(
+            "SELECT rows_upserted FROM pipeline_runs WHERE stage=? "
+            "ORDER BY started_at DESC LIMIT 1", (stage,)
+        ).fetchone()[0]
+        assert last_upserted == 0
     conn.close()
 
 
@@ -82,12 +83,17 @@ def test_metrics_ledger_records_counts_and_sha(tmp_path, demand_payload):
     cmd_ingest(settings, "a", "b", client=offline_client(settings, demand_payload))
     cmd_transform(settings)
     conn = connect(settings.db_path)
-    valid, quarantined, sha = conn.execute(
-        "SELECT rows_valid, rows_quarantined, git_sha FROM pipeline_runs "
-        "WHERE stage='transform'"
+    # Per-dataset ledger rows: a fuelmix-only change is attributable.
+    received, valid, quarantined, sha = conn.execute(
+        "SELECT rows_received, rows_valid, rows_quarantined, git_sha "
+        "FROM pipeline_runs WHERE stage='transform_demand'"
     ).fetchone()
-    assert valid == 22 and quarantined == 0  # 20 demand + 2 fuelmix
+    assert received == 20 and valid == 20 and quarantined == 0
     assert re.fullmatch(r"[0-9a-f]{7,}|unknown", sha)
+    fuel_valid = conn.execute(
+        "SELECT rows_valid FROM pipeline_runs WHERE stage='transform_fuelmix'"
+    ).fetchone()[0]
+    assert fuel_valid == 2
     conn.close()
 
 

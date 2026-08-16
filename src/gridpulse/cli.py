@@ -121,26 +121,31 @@ def cmd_ingest(
 def cmd_transform(settings: Settings) -> int:
     """Convert every bronze document into the silver tables. Idempotent."""
     run_id = _run_id()
-    t0 = time.monotonic()
     converters = {"demand": (convert_demand, upsert_demand),
                   "fuelmix": (convert_fuelmix, upsert_fuelmix)}
-    valid = quarantined = upserted = 0
+    total_quarantined = 0
     with contextlib.closing(connect(settings.db_path)) as conn:
+        # One ledger row PER DATASET (the (run_id, stage) PK permits it): a
+        # fuelmix-only quarantine spike must be attributable in the ledger
+        # itself, not by grepping logs (P2 review finding MED-2).
         for dataset, (convert, upsert) in converters.items():
+            t_ds = time.monotonic()
             docs, doc_rejects = read_bronze_docs(settings.bronze_dir, dataset)
+            received = sum(len(d["payload"]["response"]["data"]) for d in docs)
             records, row_rejects = convert(docs)
             rejects = doc_rejects + row_rejects
-            upserted += upsert(conn, records)
-            quarantined += write_quarantine(conn, run_id, rejects)
-            valid += len(records)
-        record_run(conn, _run_row(
-            run_id, "transform", rows_received=valid + quarantined,
-            rows_valid=valid, rows_quarantined=quarantined,
-            rows_upserted=upserted, t0=t0,
-        ))
-    _log(run_id, "transform", valid=valid, quarantined=quarantined, upserted=upserted)
-    if quarantined:
-        _log(run_id, "transform", note=f"{quarantined} NEW rows quarantined - "
+            upserted = upsert(conn, records)
+            quarantined = write_quarantine(conn, run_id, rejects)
+            total_quarantined += quarantined
+            record_run(conn, _run_row(
+                run_id, f"transform_{dataset}", rows_received=received,
+                rows_valid=len(records), rows_quarantined=quarantined,
+                rows_upserted=upserted, t0=t_ds,
+            ))
+            _log(run_id, f"transform_{dataset}", received=received,
+                 valid=len(records), quarantined=quarantined, upserted=upserted)
+    if total_quarantined:
+        _log(run_id, "transform", note=f"{total_quarantined} NEW rows quarantined - "
              f"inspect: SELECT error, raw FROM quarantine WHERE run_id='{run_id}'")
     return 0
 

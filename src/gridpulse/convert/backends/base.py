@@ -7,10 +7,14 @@ same cases against each):
 - Inputs: demand rows ``{region, period_utc, demand_mwh}`` and fuel-mix rows
   ``{region, period_utc, fueltype, generation_mwh}`` from the silver tables.
 - Negative generation (flagged, kept in silver) is CLIPPED TO 0 for metric
-  math — station-service draw is not negative supply.
-- ``renewable_share`` = (SUN + WND) / total generation; ``None`` when total
-  generation <= 0 (never a division error). Rounded to 4 decimals so every
-  backend produces byte-identical output.
+  math. This is a stated convention, not an accident: station-service draw
+  is not negative supply, and battery CHARGING (BAT < 0, a routine daily
+  event) is likewise excluded — the denominator is GROSS generation, not
+  generation net of storage charge.
+- ``renewable_share`` = (SUN + WND) / total gross generation; ``None`` when
+  total generation <= 0 (never a division error). Rounded to 4 decimals,
+  HALF-TO-EVEN (Python ``round`` semantics) — named explicitly so every
+  backend produces byte-identical output on exact halves.
 - ``net_load_mwh`` = demand − (SUN + WND): the duck-curve quantity.
 - ``ramp_mwh_per_h`` = net load minus the PREVIOUS CONSECUTIVE hour's net
   load per region; ``None`` at series starts and across gaps — a gap must

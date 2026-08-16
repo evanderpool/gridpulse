@@ -3,24 +3,30 @@
 Policy (per field, per the build plan; each rule traces to a validated
 observation or a stated decision):
 
-============  =========================  ==================================
-Field         Condition                  Action
-============  =========================  ==================================
-any value     null / unparseable         quarantine (handled at the Pydantic
-                                         boundary, never reaches here)
-generation    negative                   KEEP + flag ``negative_generation``
-                                         — real phenomenon: nighttime solar
-                                         draws station power (pinned
-                                         fixture, validated live 2026-08-15)
-demand        <= 0                       KEEP + flag ``nonpositive_demand``
-                                         — physically implausible for these
-                                         four grids; kept so the report can
-                                         show the anomaly instead of hiding it
-any value     |value| > 1,000,000 MWh    KEEP + flag ``extreme_value`` —
-                                         an order of magnitude above any
-                                         observed hourly figure; almost
-                                         certainly a unit or feed error
-============  =========================  ==================================
+=============  =========================  ==================================
+Field          Condition                  Action
+=============  =========================  ==================================
+any value      null / unparseable         quarantine (handled at the Pydantic
+                                          boundary, never reaches here)
+generation     negative, fueltype BAT     KEEP + flag ``storage_charging`` —
+(storage)                                 battery charge is a routine daily
+                                          phenomenon, NOT an anomaly; it
+                                          gets its own flag so
+                                          ``negative_generation`` keeps its
+                                          diagnostic value (P2 review)
+generation     negative, other fuels      KEEP + flag ``negative_generation``
+                                          — real phenomenon: nighttime solar
+                                          draws station power (pinned
+                                          fixture, validated live 2026-08-15)
+demand         <= 0                       KEEP + flag ``nonpositive_demand``
+                                          — physically implausible for these
+                                          four grids; kept so the report can
+                                          show the anomaly instead of hiding it
+any value      |value| > 1,000,000 MWh    KEEP + flag ``extreme_value`` —
+                                          an order of magnitude above any
+                                          observed hourly figure; almost
+                                          certainly a unit or feed error
+=============  =========================  ==================================
 
 Flags accumulate comma-joined in ``quality_flags``; derived metrics decide
 per-metric how to treat flagged values (e.g. derive clips negative
@@ -32,8 +38,12 @@ from __future__ import annotations
 EXTREME_ABS_MWH = 1_000_000
 
 NEGATIVE_GENERATION = "negative_generation"
+STORAGE_CHARGING = "storage_charging"
 NONPOSITIVE_DEMAND = "nonpositive_demand"
 EXTREME_VALUE = "extreme_value"
+
+# Fuel types whose negative values mean energy INTO storage, not an anomaly.
+STORAGE_FUELS = ("BAT",)
 
 
 def demand_flags(value_mwh: int) -> list[str]:
@@ -46,11 +56,11 @@ def demand_flags(value_mwh: int) -> list[str]:
     return flags
 
 
-def generation_flags(value_mwh: int) -> list[str]:
+def generation_flags(value_mwh: int, fueltype: str) -> list[str]:
     """Apply the generation-value policy; returns flags, never mutates."""
     flags = []
     if value_mwh < 0:
-        flags.append(NEGATIVE_GENERATION)
+        flags.append(STORAGE_CHARGING if fueltype in STORAGE_FUELS else NEGATIVE_GENERATION)
     if abs(value_mwh) > EXTREME_ABS_MWH:
         flags.append(EXTREME_VALUE)
     return flags

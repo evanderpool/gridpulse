@@ -9,6 +9,7 @@ from gridpulse.convert.quality import (
     EXTREME_VALUE,
     NEGATIVE_GENERATION,
     NONPOSITIVE_DEMAND,
+    STORAGE_CHARGING,
     demand_flags,
     generation_flags,
 )
@@ -51,7 +52,17 @@ def test_demand_policy_flags_nonpositive_and_extreme():
 
 
 def test_generation_policy_flags_negative_and_extreme():
-    assert generation_flags(500) == []
-    assert generation_flags(0) == []  # zero generation is normal (night solar)
-    assert NEGATIVE_GENERATION in generation_flags(-57)
-    assert EXTREME_VALUE in generation_flags(-2_000_000)
+    assert generation_flags(500, "NG") == []
+    assert generation_flags(0, "SUN") == []  # zero generation is normal (night solar)
+    assert NEGATIVE_GENERATION in generation_flags(-57, "SUN")
+    assert EXTREME_VALUE in generation_flags(-2_000_000, "SUN")
+
+
+def test_battery_charging_gets_its_own_flag_not_the_anomaly_one():
+    # Battery charge is a routine daily event; flagging it as
+    # negative_generation would fire nightly and destroy the flag's
+    # diagnostic value (P2 review finding MED-3).
+    flags = generation_flags(-2000, "BAT")
+    assert STORAGE_CHARGING in flags
+    assert NEGATIVE_GENERATION not in flags
+    assert generation_flags(1500, "BAT") == []  # discharge is plain supply

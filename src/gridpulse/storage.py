@@ -144,11 +144,12 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
     The WHERE guard makes ordering irrelevant: an older fetch can never
     overwrite a newer one, even if bronze files are replayed out of order.
     """
-    # Guard shape matters (review finding MED-3): strictly-newer always wins;
-    # an equal-timestamp write fires only when the value differs, so an
-    # identical replay counts 0 and the ledger can SEE idempotency. Do not
-    # "simplify" to `>= AND value differs` — that skips the fetched_at
-    # refresh and reopens the stale-downgrade hole.
+    # Guard shape matters (review findings P1-MED-3, P2-HIGH-1): strictly-newer
+    # always wins; an equal-timestamp write fires when the value OR the flags
+    # differ — flags must be comparable or a policy change could never repair
+    # already-stored rows. A byte-identical replay still counts 0, so the
+    # ledger can SEE idempotency. Do not "simplify" to `>= AND differs` —
+    # that skips the fetched_at refresh and reopens the stale-downgrade hole.
     cur = conn.executemany(
         """
         INSERT INTO demand_hourly (region, period_utc, demand_mwh, quality_flags, fetched_at)
@@ -159,7 +160,8 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
             fetched_at = excluded.fetched_at
         WHERE excluded.fetched_at > demand_hourly.fetched_at
            OR (excluded.fetched_at = demand_hourly.fetched_at
-               AND excluded.demand_mwh != demand_hourly.demand_mwh)
+               AND (excluded.demand_mwh != demand_hourly.demand_mwh
+                    OR excluded.quality_flags != demand_hourly.quality_flags))
         """,
         [r.model_dump() for r in records],
     )
@@ -181,7 +183,8 @@ def upsert_fuelmix(conn: sqlite3.Connection, records: list[FuelMixRecord]) -> in
             fetched_at = excluded.fetched_at
         WHERE excluded.fetched_at > fuelmix_hourly.fetched_at
            OR (excluded.fetched_at = fuelmix_hourly.fetched_at
-               AND excluded.generation_mwh != fuelmix_hourly.generation_mwh)
+               AND (excluded.generation_mwh != fuelmix_hourly.generation_mwh
+                    OR excluded.quality_flags != fuelmix_hourly.quality_flags))
         """,
         [r.model_dump() for r in records],
     )

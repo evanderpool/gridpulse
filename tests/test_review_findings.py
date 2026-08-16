@@ -119,6 +119,43 @@ def test_cr_med2_budget_exception_pages_are_instance_state():
     assert PullBudgetExceeded("c").pages == []
 
 
+def test_p2_high1_flag_only_change_still_updates_silver(tmp_path):
+    # Same value, same fetched_at, different flags — the exact Phase-1-era
+    # migration scenario: a backfilled '' flag must be repairable, or no
+    # policy change can ever reach already-stored rows (P2 finding HIGH-1).
+    import sqlite3
+
+    from gridpulse.schemas.clean import DemandRecord
+    from gridpulse.storage import upsert_demand
+
+    db = tmp_path / "old.db"
+    old = sqlite3.connect(db)
+    old.execute(
+        "CREATE TABLE demand_hourly (region TEXT NOT NULL, period_utc TEXT NOT NULL, "
+        "demand_mwh INTEGER NOT NULL, fetched_at TEXT NOT NULL, "
+        "PRIMARY KEY (region, period_utc))"
+    )
+    old.execute(
+        "INSERT INTO demand_hourly VALUES "
+        "('ERCO', '2026-08-13T18:00:00+00:00', -5, '2026-08-15T00:00:00+00:00')"
+    )
+    old.commit()
+    old.close()
+
+    conn = connect(db)  # migration backfills quality_flags=''
+    replay = DemandRecord(
+        region="ERCO", period_utc="2026-08-13T18:00:00+00:00", demand_mwh=-5,
+        quality_flags="nonpositive_demand", fetched_at="2026-08-15T00:00:00+00:00",
+    )
+    assert upsert_demand(conn, [replay]) == 1  # flag-only change writes
+    assert conn.execute(
+        "SELECT quality_flags FROM demand_hourly"
+    ).fetchone()[0] == "nonpositive_demand"
+    # And a byte-identical replay (flags included) still counts 0.
+    assert upsert_demand(conn, [replay]) == 0
+    conn.close()
+
+
 def test_cr_med6_failed_ingest_still_writes_a_ledger_row(tmp_path):
     # The run that exhausts the API budget is exactly the run that must be
     # attributable in the metrics ledger.
