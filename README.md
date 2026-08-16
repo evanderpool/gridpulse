@@ -3,7 +3,7 @@
 [![CI](https://github.com/evanderpool/gridpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/evanderpool/gridpulse/actions/workflows/ci.yml)
 [![Pipeline](https://github.com/evanderpool/gridpulse/actions/workflows/pipeline.yml/badge.svg)](https://github.com/evanderpool/gridpulse/actions/workflows/pipeline.yml)
 
-**▶ Live report: https://evanderpool.github.io/gridpulse/**
+**▶ Live report: https://evanderpool.github.io/gridpulse/** · **[Read the case study](CASE-STUDY.md)**
 
 **A live view of the U.S. electricity grid** — hourly demand and fuel mix for
 four major grid regions (ERCOT, CAISO, MISO, PJM), pulled from the

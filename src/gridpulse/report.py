@@ -28,6 +28,7 @@ from .analyze import (
     preset_findings,
     quality_summary,
 )
+from .mdlite import render as render_md
 
 REGION_LABELS = {"CISO": "California", "ERCO": "Texas",
                  "MISO": "Midwest", "PJM": "Mid-Atlantic"}
@@ -189,6 +190,29 @@ th.num-h { text-align:right; }
 footer { font-size:0.76rem; color:var(--muted); max-width:1000px;
   margin:0 auto; padding:0 1rem 2.5rem; }
 footer a { color:var(--ink2); }
+
+.mdbody { line-height:1.6; }
+.mdbody h1 { font-size:1.45rem; margin:0.2rem 0 0.6rem; letter-spacing:-0.015em; }
+.mdbody h2 { font-size:1.05rem; margin:1.5rem 0 0.4rem; }
+.mdbody h3 { font-size:0.92rem; margin:1.1rem 0 0.3rem; }
+.mdbody p { margin:0.55rem 0; max-width:78ch; font-size:0.92rem; }
+.mdbody ul { padding-left:1.2rem; margin:0.5rem 0; }
+.mdbody li { margin:0.4rem 0; font-size:0.9rem; max-width:76ch; }
+.mdbody pre { background:var(--page); border:1px solid var(--grid); border-radius:12px;
+  padding:0.8rem 1rem; font-family:Consolas,ui-monospace,monospace; font-size:0.74rem;
+  line-height:1.45; overflow-x:auto; }
+.mdbody code { background:var(--page); border:1px solid var(--grid); border-radius:5px;
+  padding:0.05em 0.35em; font-family:Consolas,ui-monospace,monospace; font-size:0.82em; }
+.mdbody pre code { border:0; padding:0; }
+.mdbody blockquote { border-left:3px solid var(--accent); margin:0.7rem 0;
+  padding:0.3rem 0 0.3rem 1rem; color:var(--ink2); font-size:0.92rem; }
+.mdbody a { color:var(--accent); }
+.mdbody hr { border:0; border-top:1px solid var(--grid); margin:1.2rem 0; }
+.mdbody table { margin:0.5rem 0; }
+.mdbody .tablewrap:first-of-type th { font-size:1.35rem; color:var(--ink);
+  text-transform:none; letter-spacing:-0.01em; border-bottom:0; padding-right:1.6rem; }
+.mdbody .tablewrap:first-of-type td { color:var(--ink2); font-size:0.78rem;
+  border-bottom:0; padding-right:1.6rem; }
 
 /* ---- Glossary Overlay ---- */
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:40;
@@ -538,6 +562,15 @@ renderAll();
 """
 
 
+def _case_study_html() -> str:
+    """CASE-STUDY.md rendered at build time — one canonical file, no drift."""
+    for candidate in (Path("CASE-STUDY.md"),
+                      Path(__file__).resolve().parents[2] / "CASE-STUDY.md"):
+        if candidate.exists():
+            return render_md(candidate.read_text(encoding="utf-8"))
+    return "<p>The case study ships with the repository: see CASE-STUDY.md.</p>"
+
+
 def build_report(conn: sqlite3.Connection) -> str:
     """Assemble the interactive report: build-time analysis, client rendering."""
     cov = coverage(conn)
@@ -786,65 +819,7 @@ WHERE region='ERCO' AND period_utc LIKE '2026-08%';</div>
 </div>
 
 <div class="view" data-view="about">
-  <div class="viewhead">
-    <h1>Case Study — How GridPulse Was Built</h1>
-    <p>GridPulse is a portfolio data-engineering project by
-    <b>Erick Vanderpool</b>: a fully automated pipeline that turns the US
-    government's raw energy feed into the analysis you're reading — for
-    $0 a month in infrastructure.</p>
-  </div>
-  <div class="card">
-    <h2>The Numbers</h2>
-    <div class="stats">
-      <div class="stat"><div class="n">{cov["hours"]:,}</div><div class="l">Hours of Grid Data Held</div></div>
-      <div class="stat"><div class="n">359K</div><div class="l">Rows Through the Pipeline</div></div>
-      <div class="stat"><div class="n">{quality["quarantined"]}</div><div class="l">Rows Quarantined</div></div>
-      <div class="stat"><div class="n">83</div><div class="l">Automated Tests</div></div>
-      <div class="stat"><div class="n">2×/day</div><div class="l">Self-Refreshing Schedule</div></div>
-      <div class="stat"><div class="n">$0</div><div class="l">Monthly Infrastructure Cost</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>How It Works</h2>
-    <p class="sub" style="max-width:78ch">
-    Twice a day, an automated run pulls the newest hourly figures from the
-    <b>EIA open-data API</b> under a hard request budget, stores the raw
-    responses verbatim (so any bug can be replayed against the original
-    bytes), validates and quality-flags every record, converts everything
-    into clean tables, computes the metrics — renewable share, net load,
-    ramp rates — and recompiles this entire page with fresh findings. Raw
-    data is versioned on its own git branch; the page is pure static HTML
-    with all analysis precomputed, which is why it loads instantly and
-    needs no server.</p>
-  </div>
-  <div class="card">
-    <h2>Engineering Practices on Display</h2>
-    <ul class="findings">
-      <li><b>Measured, not asserted</b> — retrieval quality, idempotency, and
-      every derived metric are pinned by automated tests (83 and counting).</li>
-      <li><b>Sequential adversarial reviews</b> — each build phase was
-      attacked by independent review passes; 40+ findings were fixed and
-      pinned as regression tests.</li>
-      <li><b>A written data-quality policy</b> — odd values are flagged and
-      kept, failures are quarantined with reasons, and the run ledger makes
-      every update auditable to the commit.</li>
-      <li><b>Swappable engines</b> — the metric layer runs on Polars or
-      pandas behind one contract, verified byte-identical across the full
-      dataset.</li>
-      <li><b>Two deliberate surfaces</b> — this designed product page, and a
-      functional internal tool (Streamlit) with an AI analyst grounded in
-      read-only SQL.</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h2>Explore Further</h2>
-    <div class="chips">
-      <a class="cta" href="https://github.com/evanderpool/gridpulse"
-         target="_blank" rel="noopener">Source Code &amp; Docs ↗</a>
-      <a class="cta" href="https://evanderpool.github.io/artificial-management/"
-         target="_blank" rel="noopener">More Projects ↗</a>
-    </div>
-  </div>
+  <div class="card mdbody">{_case_study_html()}</div>
 </div>
 
 </div>
