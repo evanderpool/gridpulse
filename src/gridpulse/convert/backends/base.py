@@ -90,8 +90,16 @@ def get_backend(name: str | None = None) -> Backend:
         from .polars_backend import PolarsBackend
 
         return PolarsBackend()
+    if name == "pandas":
+        try:
+            from .pandas_backend import PandasBackend
+        except ImportError:
+            raise RuntimeError(
+                "the pandas backend needs pandas installed. "
+                "Fix: pip install 'gridpulse[pandas]' (or pip install pandas)."
+            ) from None
+        return PandasBackend()
     raise ValueError(
-        f"unknown backend {name!r} — available: '{DEFAULT_BACKEND}'. "
-        f"Fix: set {BACKEND_ENV_VAR}={DEFAULT_BACKEND} (or unset it); a pandas "
-        "backend arrives in a stretch phase, same contract."
+        f"unknown backend {name!r} — available: 'polars', 'pandas'. "
+        f"Fix: set {BACKEND_ENV_VAR} to one of those (or unset it for the default)."
     )

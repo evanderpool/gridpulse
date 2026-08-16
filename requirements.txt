@@ -1,0 +1,6 @@
+# Streamlit Community Cloud environment for app/dashboard.py ONLY.
+# The pipeline's dependencies live in pyproject.toml — the app is standalone
+# by design (reads the published DB, never imports the package).
+streamlit>=1.36
+pandas>=2.0
+requests>=2.31

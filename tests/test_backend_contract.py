@@ -10,6 +10,10 @@ from gridpulse.convert.backends import get_backend
 from gridpulse.convert.backends.base import Backend
 
 BACKENDS: list[Backend] = [get_backend("polars")]
+try:
+    BACKENDS.append(get_backend("pandas"))
+except RuntimeError:
+    pass  # pandas not installed — the polars run still guards the contract
 
 
 def d(region: str, hour: int, mwh: int) -> dict:

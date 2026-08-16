@@ -118,7 +118,9 @@ Captured during pre-build validation; each is a named test fixture in
 | 1 | Vertical slice: ingest → bronze → validate → convert → SQLite, idempotency proven by test; two adversarial review passes applied + pinned | ✅ 2026-08-15 |
 | 2 | Full conversion suite, quarantine, metrics ledger; quality policy live (negative solar flagged, battery charge named); swappable Polars backend behind per-engine contract tests | ✅ 2026-08-16 |
 | 3 | Gold marts, HTML report, Actions cron (2×/day), Pages — **MVP ship**, `v1.0-baseline` tagged | ✅ 2026-08-16 |
-| 4+ | Stretch, strictly in order: Streamlit dashboard → quality panel → pandas backend → weather join → AI notes → suggestion engine | |
+| 4 | Streamlit dashboard (`app/dashboard.py`) with the data-quality panel — reads the published DB from the `data` branch, never the API | ✅ 2026-08-16 |
+| 5 | Pandas backend passing the identical contract file; verified **byte-identical** to Polars over the full 13-month dataset (38,580 metric rows). Swap: `GRIDPULSE_BACKEND=pandas` | ✅ 2026-08-16 |
+| 6+ | Remaining stretch, strictly in order: Open-Meteo weather join → AI analyst notes → suggestion engine | |
 
 ## Running locally
 
@@ -131,7 +133,13 @@ gridpulse derive                              # silver → gold metrics
 ```
 
 The dataframe engine behind `derive` is selected with `GRIDPULSE_BACKEND`
-(default `polars`) — the swappable-backend design's one config line.
+(default `polars`; `pandas` also available) — the swappable-backend design's
+one config line. Both engines pass the identical contract test file and
+produce byte-identical gold output over the full 13-month dataset.
+
+The interactive dashboard (`app/dashboard.py`) runs with
+`streamlit run app/dashboard.py` — it reads the published database from the
+`data` branch, so it works anywhere without an API key.
 
 An EIA API key (free) goes in `.env` (gitignored) as `EIA_API_KEY=...` —
 never in the repo, and a GitHub Actions secret in CI.
