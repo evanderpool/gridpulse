@@ -22,6 +22,8 @@ class RawDemandRow(BaseModel):
     period: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}$")
     respondent: str = Field(min_length=1)
     type: Literal["D"]
+    # Phase 2 (quality.py): negative/absurd demand values pass through today —
+    # the null/outlier policy flags them there, not at the boundary.
     value: int
     value_units: str = Field(alias="value-units")
 
