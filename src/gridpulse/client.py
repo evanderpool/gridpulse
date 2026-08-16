@@ -8,6 +8,7 @@ the API — this module is the only network code in the package.
 
 from __future__ import annotations
 
+import gzip
 import json
 import time
 from datetime import datetime, timezone
@@ -189,7 +190,10 @@ def write_bronze(
             doc["request"] = {**doc["request"], "params": {**doc["request"]["params"]}}
             doc["request"]["params"].pop("api_key", None)
         out = {"fetched_at": fetched_at, "window": window, "payload": doc}
-        path = bronze_dir / f"{dataset}_{window}_p{i:03d}_{run_id}.json"
-        path.write_text(json.dumps(out, indent=1), encoding="utf-8", newline="\n")
+        # Gzipped, compact JSON: the repo data budget (~50 MB) assumes
+        # compressed raw files — plain indented JSON is ~10x larger.
+        path = bronze_dir / f"{dataset}_{window}_p{i:03d}_{run_id}.json.gz"
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            json.dump(out, f, separators=(",", ":"))
         written.append(path)
     return written

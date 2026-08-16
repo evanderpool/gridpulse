@@ -39,11 +39,13 @@ def test_full_pipeline_end_to_end(tmp_path, demand_payload):
 
     assert cmd_ingest(settings, "2026-08-13T00", "2026-08-14T00",
                       client=offline_client(settings, demand_payload)) == 0
-    bronze = sorted(p.name for p in settings.bronze_dir.glob("*.json"))
+    bronze = sorted(p.name for p in settings.bronze_dir.glob("*.json.gz"))
     assert len(bronze) == 2
     assert bronze[0].startswith("demand_") and bronze[1].startswith("fuelmix_")
-    assert all("test-key" not in (settings.bronze_dir / n).read_text(encoding="utf-8")
-               for n in bronze)
+    import gzip
+    for n in bronze:
+        with gzip.open(settings.bronze_dir / n, "rt", encoding="utf-8") as f:
+            assert "test-key" not in f.read()
 
     assert cmd_transform(settings) == 0
     assert cmd_derive(settings) == 0
@@ -99,7 +101,7 @@ def test_single_dataset_ingest_flag(tmp_path, demand_payload):
     settings = Settings(api_key="test-key", data_dir=tmp_path / "data")
     cmd_ingest(settings, "a", "b", client=offline_client(settings, demand_payload),
                datasets=("demand",))
-    names = [p.name for p in settings.bronze_dir.glob("*.json")]
+    names = [p.name for p in settings.bronze_dir.glob("*.json.gz")]
     assert len(names) == 1 and names[0].startswith("demand_")
     conn = connect(settings.db_path)
     assert conn.execute("SELECT rows_received FROM pipeline_runs").fetchone()[0] == 20

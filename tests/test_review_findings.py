@@ -87,7 +87,7 @@ def test_low2_budget_death_mid_window_persists_partial_bronze(tmp_path):
     client = EiaClient(settings, transport=httpx.MockTransport(handler))
     with pytest.raises(PullBudgetExceeded):
         cmd_ingest(settings, "a", "b", client=client)
-    partial = list(settings.bronze_dir.glob("*_partial_*.json"))
+    partial = list(settings.bronze_dir.glob("*_partial_*.json.gz"))
     assert len(partial) == 2  # both paid-for pages persisted
 
 

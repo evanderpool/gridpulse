@@ -1,0 +1,946 @@
+{
+ "fetched_at": "2026-08-16T01:12:21.365547+00:00",
+ "window": "2026-08-14T00_2026-08-15T00",
+ "payload": {
+  "response": {
+   "total": "100",
+   "dateFormat": "YYYY-MM-DD\"T\"HH24",
+   "frequency": "hourly",
+   "data": [
+    {
+     "period": "2026-08-14T00",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "35099",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T00",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "87487",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T00",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "107387",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T00",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "131335",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T01",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34500",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T01",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "86043",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T01",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "105245",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T01",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "128101",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T02",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34531",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T02",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "83583",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T02",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "102755",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T02",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "123749",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T03",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33968",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T03",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "80652",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T03",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "98423",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T03",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "116844",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T04",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33982",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T04",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "76603",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T04",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "92994",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T04",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "111446",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T05",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33270",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T05",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "72218",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T05",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "88229",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T05",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "106853",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T06",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "31410",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T06",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "68817",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T06",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "84619",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T06",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "102489",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T07",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "29427",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T07",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "66043",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T07",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "81448",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T07",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "99305",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T08",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "28268",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T08",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "63861",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T08",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "79294",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T08",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "96905",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T09",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "27037",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T09",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "62199",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T09",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "77994",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T09",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "96367",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T10",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "25962",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T10",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "61445",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T10",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "78042",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T10",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "98440",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T11",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "25258",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T11",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "61816",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T11",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "79322",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T11",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "102001",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T12",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "25275",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T12",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "62807",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T12",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "81662",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T12",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "105499",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T13",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "25984",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T13",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "62979",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T13",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "83743",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T13",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "109001",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T14",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "27264",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T14",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "65532",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T14",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "86810",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T14",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "111925",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T15",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "28400",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T15",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "69364",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T15",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "90134",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T15",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "115174",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T16",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "31726",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T16",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "73243",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T16",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "94042",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T16",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "118189",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T17",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33783",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T17",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "77140",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T17",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "98035",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T17",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "121811",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T18",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34540",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T18",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "80583",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T18",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "101606",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T18",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "124694",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T19",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34303",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T19",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "83980",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T19",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "104164",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T19",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "126877",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T20",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34040",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T20",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "86142",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T20",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "105820",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T20",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "129338",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T21",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33758",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T21",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "87559",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T21",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "107199",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T21",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "132063",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T22",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "33286",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T22",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "87647",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T22",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "108008",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T22",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "133013",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T23",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34199",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T23",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "87186",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T23",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "107266",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-14T23",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "131170",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-15T00",
+     "respondent": "CISO",
+     "respondent-name": "California Independent System Operator",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "34578",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-15T00",
+     "respondent": "ERCO",
+     "respondent-name": "Electric Reliability Council of Texas, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "85593",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-15T00",
+     "respondent": "MISO",
+     "respondent-name": "Midcontinent Independent System Operator, Inc.",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "105495",
+     "value-units": "megawatthours"
+    },
+    {
+     "period": "2026-08-15T00",
+     "respondent": "PJM",
+     "respondent-name": "PJM Interconnection, LLC",
+     "type": "D",
+     "type-name": "Demand",
+     "value": "127170",
+     "value-units": "megawatthours"
+    }
+   ],
+   "description": "Hourly demand, day-ahead demand forecast, net generation, and interchange by balancing authority.  \n    Source: Form EIA-930\n    Product: Hourly Electric Grid Monitor"
+  },
+  "request": {
+   "command": "/v2/electricity/rto/region-data/data/",
+   "params": {
+    "frequency": "hourly",
+    "data": [
+     "value"
+    ],
+    "facets": {
+     "type": [
+      "D"
+     ],
+     "respondent": [
+      "ERCO",
+      "CISO",
+      "MISO",
+      "PJM"
+     ]
+    },
+    "start": "2026-08-14T00",
+    "end": "2026-08-15T00",
+    "length": "5000",
+    "sort": [
+     {
+      "column": "period",
+      "direction": "asc"
+     }
+    ],
+    "offset": "0"
+   }
+  },
+  "apiVersion": "2.1.13",
+  "ExcelAddInVersion": "2.1.0"
+ }
+}

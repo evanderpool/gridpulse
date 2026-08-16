@@ -3,6 +3,7 @@
 All offline via httpx.MockTransport; sleeps are captured, never real.
 """
 
+import gzip
 import json
 from pathlib import Path
 
@@ -117,11 +118,16 @@ def test_unrecognized_envelope_fails_with_fix_path(tmp_path):
         client.fetch_demand_window("a", "b")
 
 
+def read_bronze_text(path: Path) -> str:
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return f.read()
+
+
 def test_bronze_scrubs_the_api_key_echo(tmp_path):
     # EIA echoes request params (key included) back in the payload — the
     # Phase 0 lesson. Bronze must never contain it.
     paths = write_bronze([wire_page([good_row()])], "run1", tmp_path / "bronze", "w")
-    text = paths[0].read_text(encoding="utf-8")
+    text = read_bronze_text(paths[0])
     assert "test-key" not in text
     doc = json.loads(text)
     assert doc["payload"]["response"]["data"]  # payload otherwise intact
@@ -133,5 +139,5 @@ def test_bronze_filenames_carry_window_and_run(tmp_path):
         [wire_page([good_row()]), wire_page([good_row()])], "runX", tmp_path, "W"
     )
     names = [p.name for p in paths]
-    assert names == ["demand_W_p000_runX.json", "demand_W_p001_runX.json"]
+    assert names == ["demand_W_p000_runX.json.gz", "demand_W_p001_runX.json.gz"]
     assert all((Path(tmp_path) / n).exists() for n in names)

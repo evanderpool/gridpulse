@@ -6,6 +6,7 @@ bronze set produces a byte-identical silver table, and a test proves it.
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import sqlite3
@@ -115,9 +116,16 @@ def read_bronze_docs(bronze_dir: Path, dataset: str = "demand") -> tuple[list[di
     """
     docs: list[dict] = []
     rejects: list[Reject] = []
-    for path in sorted(bronze_dir.glob(f"{dataset}_*.json")):
+    paths = sorted(bronze_dir.glob(f"{dataset}_*.json")) + sorted(
+        bronze_dir.glob(f"{dataset}_*.json.gz")
+    )
+    for path in paths:
         try:
-            doc = json.loads(path.read_text(encoding="utf-8"))
+            if path.name.endswith(".gz"):
+                with gzip.open(path, "rt", encoding="utf-8") as f:
+                    doc = json.load(f)
+            else:
+                doc = json.loads(path.read_text(encoding="utf-8"))
             fetched_at = doc["fetched_at"]
             data = doc["payload"]["response"]["data"]
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
