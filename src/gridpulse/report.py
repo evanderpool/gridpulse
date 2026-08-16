@@ -28,7 +28,8 @@ from .analyze import (
     quality_summary,
 )
 
-REGION_LABELS = {"CISO": "CAISO", "ERCO": "ERCOT", "MISO": "MISO", "PJM": "PJM"}
+REGION_LABELS = {"CISO": "California", "ERCO": "Texas",
+                 "MISO": "Midwest", "PJM": "Mid-Atlantic"}
 
 CSS = """
 :root { color-scheme: light;
@@ -121,10 +122,10 @@ footer a { color:var(--ink2); }
 JS = r"""
 const D = __DATA__;
 const REGIONS = ["CISO","ERCO","MISO","PJM"];
-const NAMES = {CISO:"CAISO", ERCO:"ERCOT", MISO:"MISO", PJM:"PJM"};
+const NAMES = {CISO:"California", ERCO:"Texas", MISO:"Midwest", PJM:"Mid-Atlantic"};
 const VARS = {CISO:"--ciso", ERCO:"--erco", MISO:"--miso", PJM:"--pjm"};
-const PRESET_LABEL = {"7d":"last 7 days","30d":"last 30 days","90d":"last 90 days",
-  "6m":"last 6 months","12m":"last 12 months","all":"full history"};
+const PRESET_LABEL = {"7d":"the last 7 days","30d":"the last 30 days","90d":"the last 90 days",
+  "6m":"the last 6 months","12m":"the last 12 months","all":"everything on record"};
 let preset = "90d";
 let active = new Set(REGIONS.filter(r => (D.findings[preset].regions||{})[r]));
 
@@ -219,34 +220,36 @@ function renderFindings(){
   for (const r of regs){
     const s = f.regions[r], name = NAMES[r];
     const dPrev = s.demand_vs_prev_pct, dYoy = s.demand_vs_yoy_pct;
-    tiles += `<div class="tile"><div class="v">${fmtGW(s.avg_demand)} GWh/h</div>` +
-      `<div class="k">${name} avg demand</div>` +
+    tiles += `<div class="tile"><div class="v">${fmtGW(s.avg_demand)} GWh</div>` +
+      `<div class="k">${name} — electricity used per hour, on average</div>` +
       (dPrev == null ? "" : `<div class="d ${cls(dPrev)}">${dPrev>=0?"▲":"▼"} ` +
-        `${Math.abs(dPrev).toFixed(1)}% vs prior window</div>`) + `</div>`;
+        `${Math.abs(dPrev).toFixed(1)}% vs the window before</div>`) + `</div>`;
     if (s.avg_share != null){
       const sPrev = s.share_vs_prev_pts;
       tiles += `<div class="tile"><div class="v">${s.avg_share.toFixed(1)}%</div>` +
-        `<div class="k">${name} renewable share</div>` +
+        `<div class="k">${name} — power that came from wind &amp; solar</div>` +
         (sPrev == null ? "" : `<div class="d ${cls(sPrev)}">${sPrev>=0?"▲":"▼"} ` +
-          `${Math.abs(sPrev).toFixed(1)} pts vs prior</div>`) + `</div>`;
+          `${Math.abs(sPrev).toFixed(1)} points vs the window before</div>`) + `</div>`;
     }
-    let bits = [`<b>${name}</b> averaged <b>${fmtGW(s.avg_demand)} GWh/h</b> of demand`];
-    if (dPrev != null) bits.push(`${dir(dPrev)} <b>${Math.abs(dPrev).toFixed(1)}%</b> vs the prior window`);
-    if (dYoy != null) bits.push(`${dir(dYoy)} <b>${Math.abs(dYoy).toFixed(1)}%</b> vs the same window last year`);
+    let bits = [`<b>${name}</b> used an average of <b>${fmtGW(s.avg_demand)} GWh</b> of electricity each hour`];
+    if (dPrev != null) bits.push(`that's ${dir(dPrev)} <b>${Math.abs(dPrev).toFixed(1)}%</b> from the window right before this one`);
+    if (dYoy != null) bits.push(`and ${dir(dYoy)} <b>${Math.abs(dYoy).toFixed(1)}%</b> compared with the same period last year`);
     sentences += `<li>${bits.join("; ")}.</li>`;
     if (s.avg_share != null){
-      let sb = [`<b>${name}</b> renewables covered <b>${s.avg_share.toFixed(1)}%</b> of generation`];
+      let sb = [`Wind and solar supplied <b>${s.avg_share.toFixed(1)}%</b> of <b>${name}</b>'s electricity`];
       if (s.share_vs_prev_pts != null)
-        sb.push(`${dir(s.share_vs_prev_pts)} <b>${Math.abs(s.share_vs_prev_pts).toFixed(1)} pts</b> vs the prior window`);
+        sb.push(`${dir(s.share_vs_prev_pts)} <b>${Math.abs(s.share_vs_prev_pts).toFixed(1)} points</b> from the window before`);
       if (s.share_vs_yoy_pts != null)
-        sb.push(`${dir(s.share_vs_yoy_pts)} <b>${Math.abs(s.share_vs_yoy_pts).toFixed(1)} pts</b> year over year`);
+        sb.push(`${dir(s.share_vs_yoy_pts)} <b>${Math.abs(s.share_vs_yoy_pts).toFixed(1)} points</b> from a year ago`);
       sentences += `<li>${sb.join("; ")}.</li>`;
     }
-    if (s.peak) sentences += `<li><b>${name}</b> peaked at <b>${fmtGW(s.peak[1])} GWh</b> on ` +
-      `${esc(s.peak[0].slice(0,13))}:00 UTC.</li>`;
-    if (s.belly) sentences += `<li><b>${name}</b> net load bottomed at ` +
-      `<b>${fmtGW(s.belly[1])} GWh</b> (${esc(s.belly[0].slice(0,13))}:00 UTC)` +
-      (s.max_ramp != null ? `; steepest ramp <b>+${fmtGW(s.max_ramp)} GWh/h</b>.` : ".") + `</li>`;
+    if (s.peak) sentences += `<li><b>${name}</b>'s single busiest hour: <b>${fmtGW(s.peak[1])} GWh</b> on ` +
+      `${esc(s.peak[0].slice(0,10))} at ${esc(s.peak[0].slice(11,13))}:00 UTC — ` +
+      `roughly enough for <b>${Math.round(s.peak[1]/1.3/1000)} million homes</b> that hour.</li>`;
+    if (s.belly) sentences += `<li>Solar pushed <b>${name}</b>'s conventional power plants down to just ` +
+      `<b>${fmtGW(s.belly[1])} GWh</b> at their quietest (${esc(s.belly[0].slice(0,10))} ` +
+      `${esc(s.belly[0].slice(11,13))}:00 UTC)` +
+      (s.max_ramp != null ? `; after sunset they had to ramp back up by as much as <b>+${fmtGW(s.max_ramp)} GWh in a single hour</b>.` : ".") + `</li>`;
   }
   document.getElementById("tiles").innerHTML = tiles ||
     '<div class="tile"><div class="v">—</div><div class="k">no data in window</div></div>';
@@ -300,8 +303,8 @@ function renderDuck(){
   const rows = (D.hourly[region]||[]).filter(r => r[0].slice(0,10) === day);
   const labels = rows.map(r => r[0].slice(11)+":00");
   drawChart(document.getElementById("duck"), [
-    {name:"Demand", vals:rows.map(r => r[1]), cssvar:"--muted", dash:"5 4", dy:-8},
-    {name:"Net load", vals:rows.map(r => r[2]), cssvar:VARS[region], width:2.5, dy:8},
+    {name:"All power used", vals:rows.map(r => r[1]), cssvar:"--muted", dash:"5 4", dy:-8},
+    {name:"Power plants", vals:rows.map(r => r[2]), cssvar:VARS[region], width:2.5, dy:8},
   ], labels, "MWh");
 }
 
@@ -397,12 +400,40 @@ def build_report(conn: sqlite3.Connection) -> str:
   {cov["start"][:10] if cov["start"] else "—"} → {cov["end"][:16] if cov["end"] else "—"} UTC
   · {cov["hours"]:,} hours held</div>
   <h1>GridPulse</h1>
-  <p>Hourly US electricity demand and fuel mix for four major grids, through a
-  deterministic, quality-flagged pipeline. Pick a time frame — every figure,
-  finding, and chart below recomputes. All analysis is compiled into this page
-  at build time from the pipeline's own database: no backend, no API calls,
-  and every number traces to a stored raw payload.</p>
+  <p>A live picture of the US electricity grid: how much power four big
+  regions are using, hour by hour, and how much of it comes from wind and
+  solar. Pick a time frame below — every number, sentence, and chart on the
+  page recalculates for that window. The data comes from the US government's
+  energy agency (EIA) and refreshes automatically twice a day.</p>
 </header>
+
+<div class="card">
+  <h2>How to read this page</h2>
+  <div class="tablewrap"><table>
+    <tr><th>The four regions</th><th>Who that is</th></tr>
+    <tr><td><b>California</b></td><td>the California grid (operator: CAISO) —
+      power for about 32 million people</td></tr>
+    <tr><td><b>Texas</b></td><td>the Texas grid (operator: ERCOT) — about 27
+      million people; famous for wind power</td></tr>
+    <tr><td><b>Midwest</b></td><td>15 states from Minnesota down to Louisiana
+      (operator: MISO) — about 45 million people</td></tr>
+    <tr><td><b>Mid-Atlantic</b></td><td>13 states around Pennsylvania, Virginia,
+      Ohio and Illinois (operator: PJM) — about 65 million people, the biggest
+      of the four</td></tr>
+  </table></div>
+  <p class="sub" style="margin-top:0.6rem">
+  <b>The words and numbers:</b>
+  <b>Demand</b> is simply how much electricity everyone in a region is using.
+  It's measured in <b>GWh (gigawatt-hours)</b> — as a feel for scale, 1 GWh is
+  roughly one hour of electricity for <b>750,000 homes</b>.
+  <b>Renewable share</b> is the slice of generated power that came from wind
+  and solar. <b>Net load</b> is what conventional power plants (gas, nuclear,
+  coal, hydro) must supply after wind and solar have done their part — the
+  famous "<b>duck curve</b>" is net load sagging at midday when solar floods
+  in, then climbing steeply at sunset.
+  All clock times are <b>UTC</b> (subtract 4 hours for Eastern time, 7 for
+  Pacific).</p>
+</div>
 
 <div class="controls">
   {range_buttons}
@@ -411,35 +442,46 @@ def build_report(conn: sqlite3.Connection) -> str:
 </div>
 
 <div class="card">
-  <h2>Findings — <span id="findwindow">last 90 days</span></h2>
-  <p class="sub">Computed arithmetic over the gold tables: each window is
-  compared against the preceding window of equal length and the same window
-  one year earlier. No model, no estimation.</p>
+  <h2>What the data says — <span id="findwindow">the last 90 days</span></h2>
+  <p class="sub">Plain-English findings, recalculated for whatever time frame
+  you pick above. Every sentence is straight arithmetic on the data — each
+  window is compared with the window right before it, and with the same
+  window one year earlier. Nothing is estimated.</p>
   <div class="tiles" id="tiles"></div>
   <ul class="findings" id="sentences"></ul>
   <div class="chips">
-    <button class="dl" id="dl-daily">⬇ Daily averages (CSV, this window)</button>
-    <button class="dl" id="dl-hourly">⬇ Hourly detail (CSV, last 30 days)</button>
+    <button class="dl" id="dl-daily">⬇ Download this window's daily numbers (CSV)</button>
+    <button class="dl" id="dl-hourly">⬇ Download hourly detail, last 30 days (CSV)</button>
   </div>
 </div>
 
 <div class="card">
-  <h2>Demand trend</h2>
-  <p class="sub">Daily average demand per region over the selected window.
-  Y-axis in GWh.</p>
+  <h2>How much electricity each region is using</h2>
+  <p class="sub">Each line is a region's average electricity use per day.
+  Higher line = more power being used. The Mid-Atlantic and Midwest sit far
+  above the others simply because they serve the most people. Watch summer
+  heat (air conditioning) push every line up. Scale: GWh — 1 GWh ≈ one hour
+  of power for 750,000 homes. Hover any chart for exact numbers.</p>
   <div class="chartwrap" id="trend-demand"></div>
 </div>
 
 <div class="card">
-  <h2>Renewable share trend</h2>
-  <p class="sub">Wind + solar as a share of gross generation, daily average.</p>
+  <h2>How much of the power comes from wind &amp; solar</h2>
+  <p class="sub">The "Renewable share": for every 100 units of electricity
+  generated, how many came from wind and solar. Texas's climb is the
+  standout story — its huge wind and solar build-out is visible right here.</p>
   <div class="chartwrap" id="trend-share"></div>
 </div>
 
 <div class="card">
-  <h2>The duck curve, any recent day</h2>
-  <p class="sub">Demand vs net load (demand − wind − solar). Pick a region and
-  a day from the last 30. Midday Pacific ≈ 19:00–22:00 UTC. Y-axis in GWh.</p>
+  <h2>The "duck curve" — solar reshaping California's day</h2>
+  <p class="sub">Two lines for one single day. The <b>gray dashed line</b> is
+  everything people used. The <b>solid line</b> is what conventional power
+  plants had to supply once wind and solar chipped in. At midday the solid
+  line sags (the sun is doing the work); at sunset it shoots back up — power
+  plants must ramp up fast, which is the grid's hardest daily moment. The
+  sag-then-surge shape looks like a duck, hence the name. Pick any region
+  and any day from the last 30.</p>
   <div class="chips" style="margin-bottom:0.5rem">
     <select id="duck-region">{duck_options}</select>
     <select id="duck-day"></select>
@@ -448,25 +490,32 @@ def build_report(conn: sqlite3.Connection) -> str:
 </div>
 
 <div class="card">
-  <h2>Daily profile — when each grid peaks</h2>
-  <p class="sub">Average demand by hour of day (UTC) over the selected window.
-  Change the window to watch the shape shift with the seasons. Y-axis in GWh.</p>
+  <h2>A typical day — when people use the most power</h2>
+  <p class="sub">The average shape of a day: each line shows how a region's
+  electricity use rises and falls across 24 hours (UTC — subtract 4 for
+  Eastern, 7 for Pacific). Every region has a morning rise and an
+  early-evening peak, when people get home, cook, and turn things on.
+  Change the time frame above to watch the shape shift with the seasons.</p>
   <div class="chartwrap" id="profile"></div>
 </div>
 
 <div class="card">
-  <h2>Quality, on the record</h2>
-  <p class="sub">The written null/outlier policy in action — flagged, kept,
-  never silently dropped. Quarantined rows are stored with their errors.</p>
+  <h2>Behind the scenes — is this data trustworthy?</h2>
+  <p class="sub">Every incoming number is checked. Odd-but-real values are
+  kept and labeled (for example, solar panels read slightly <i>negative</i>
+  at night because their equipment draws a trickle of power — real, flagged,
+  kept). Values that fail checks are quarantined with the reason — never
+  silently deleted. "Renewable share" and every other figure above is
+  computed only from checked data.</p>
   <div class="chips">{flag_chips}
     <span class="qchip"><b>{quality["quarantined"]}</b> rows quarantined</span></div>
 </div>
 
 <div class="card">
-  <h2>Run ledger</h2>
-  <p class="sub">Recent pipeline runs, keyed to the git commit that produced
-  them — <span class="mono">upserted=0</span> on a replay is idempotency,
-  visible.</p>
+  <h2>Run ledger — every update, on the record</h2>
+  <p class="sub">This page rebuilds itself twice a day. Each row below is one
+  automatic run: how many numbers came in, how many passed checks, and the
+  exact software version (commit) that did the work — a full audit trail.</p>
   <div class="tablewrap"><table>
     <tr><th>run</th><th>stage</th><th>commit</th><th class="num-h">received</th>
         <th class="num-h">valid</th><th class="num-h">quar.</th>

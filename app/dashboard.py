@@ -24,7 +24,8 @@ import streamlit as st
 DB_URL = "https://raw.githubusercontent.com/evanderpool/gridpulse/data/gridpulse.db"
 REPORT_URL = "https://evanderpool.github.io/gridpulse/"
 REPO_URL = "https://github.com/evanderpool/gridpulse"
-REGION_LABELS = {"CISO": "CAISO", "ERCO": "ERCOT", "MISO": "MISO", "PJM": "PJM"}
+REGION_LABELS = {"CISO": "California", "ERCO": "Texas",
+                 "MISO": "Midwest", "PJM": "Mid-Atlantic"}
 RANGE_PRESETS = {
     "Last 7 days": 7, "Last 30 days": 30, "Last 90 days": 90,
     "Last 6 months": 182, "Last 12 months": 365,
@@ -86,11 +87,29 @@ cov_start, cov_end = demand_all["period_utc"].min(), demand_all["period_utc"].ma
 
 st.title("⚡ GridPulse")
 st.caption(
-    f"Hourly US electricity demand and fuel mix through a deterministic, "
-    f"quality-flagged pipeline · [static report]({REPORT_URL}) · "
-    f"[source & docs]({REPO_URL}) · data: EIA open-data API v2 · all times UTC. "
-    f"This app reads the pipeline's published database — it never calls the API."
+    f"A live picture of the US electricity grid — how much power four big "
+    f"regions use, and how much comes from wind and solar · "
+    f"[report]({REPORT_URL}) · [source]({REPO_URL}) · data: US EIA · "
+    f"all times UTC. This app reads the pipeline's published database — "
+    f"it never calls the API."
 )
+
+with st.expander("❓ What am I looking at? (regions, words, and numbers)"):
+    st.markdown(
+        "**The four regions** — "
+        "**California** (grid operator CAISO, ~32M people) · "
+        "**Texas** (ERCOT, ~27M, famous for wind) · "
+        "**Midwest** (MISO — 15 states, Minnesota to Louisiana, ~45M) · "
+        "**Mid-Atlantic** (PJM — 13 states around Pennsylvania/Virginia/"
+        "Illinois, ~65M, the biggest).\n\n"
+        "**Demand** = how much electricity everyone is using, measured in "
+        "**GWh** (gigawatt-hours) — 1 GWh is roughly one hour of power for "
+        "**750,000 homes**. **Renewable share** = the slice of generated "
+        "power that came from wind and solar. **Net load** = what "
+        "conventional power plants must supply after wind and solar chip "
+        "in; its midday sag and sunset surge is the famous **duck curve**. "
+        "Clock times are **UTC** — subtract 4 hours for Eastern, 7 for "
+        "Pacific.")
 
 # ---------- sidebar: the analysis window ----------
 st.sidebar.header("Analysis window")
@@ -122,12 +141,16 @@ prev_start, prev_end = w_start - (w_end - w_start), w_start
 yoy_start, yoy_end = w_start - timedelta(days=365), w_end - timedelta(days=365)
 
 tab_find, tab_trend, tab_duck, tab_profile, tab_quality = st.tabs(
-    ["📋 Findings", "📈 Trends", "🦆 Duck curve", "🕐 Daily profile", "✅ Data quality"])
+    ["📋 What the data says", "📈 Usage & renewables", "🦆 The duck curve",
+     "🕐 A typical day", "✅ Data checks"])
 
 # ---------- Findings: deterministic auto-analysis ----------
 with tab_find:
-    st.subheader(f"Computed findings — {preset.lower()} "
+    st.subheader(f"What the data says — {preset.lower()} "
                  f"({w_start:%Y-%m-%d} → {(w_end - timedelta(days=1)):%Y-%m-%d})")
+    st.caption("Plain-English findings, straight arithmetic on the data. "
+               "Each window is compared with the window right before it and "
+               "with the same window one year earlier.")
     cols = st.columns(len(regions) or 1)
     sentences: list[str] = []
     for col, region in zip(cols, regions):
@@ -146,47 +169,53 @@ with tab_find:
         share_prev = prev_m["renewable_share"].mean() if len(prev_m) else None
         share_yoy = yoy_m["renewable_share"].mean() if len(yoy_m) else None
 
-        col.metric(f"{name} · avg demand",
-                   f"{avg_now/1000:,.1f} GWh/h" if pd.notna(avg_now) else "—",
-                   None if d_prev is None else f"{d_prev:+.1f}% vs prior window")
-        col.metric(f"{name} · renewable share",
+        col.metric(f"{name} · electricity used per hour",
+                   f"{avg_now/1000:,.1f} GWh" if pd.notna(avg_now) else "—",
+                   None if d_prev is None else f"{d_prev:+.1f}% vs the window before")
+        col.metric(f"{name} · power from wind & solar",
                    f"{share_now*100:.1f}%" if pd.notna(share_now) else "—",
                    None if share_prev is None or pd.isna(share_prev)
-                   else f"{(share_now - share_prev)*100:+.1f} pts vs prior")
+                   else f"{(share_now - share_prev)*100:+.1f} pts vs the window before")
 
         if pd.notna(avg_now):
-            bits = [f"**{name}** averaged **{avg_now/1000:,.1f} GWh/h** of demand"]
+            bits = [f"**{name}** used an average of **{avg_now/1000:,.1f} GWh** "
+                    "of electricity each hour"]
             if d_prev is not None:
-                bits.append(f"{'up' if d_prev >= 0 else 'down'} "
-                            f"**{abs(d_prev):.1f}%** vs the prior {window_days} days")
+                bits.append(f"that's {'up' if d_prev >= 0 else 'down'} "
+                            f"**{abs(d_prev):.1f}%** from the prior {window_days} days")
             if d_yoy is not None:
-                bits.append(f"{'up' if d_yoy >= 0 else 'down'} "
-                            f"**{abs(d_yoy):.1f}%** vs the same window last year")
+                bits.append(f"and {'up' if d_yoy >= 0 else 'down'} "
+                            f"**{abs(d_yoy):.1f}%** from the same period last year")
             sentences.append("; ".join(bits) + ".")
         if pd.notna(share_now):
-            bits = [f"**{name}** renewables covered **{share_now*100:.1f}%** of generation"]
+            bits = [f"Wind and solar supplied **{share_now*100:.1f}%** of "
+                    f"**{name}**'s electricity"]
             if share_prev is not None and pd.notna(share_prev):
                 delta = (share_now - share_prev) * 100
                 bits.append(f"{'up' if delta >= 0 else 'down'} **{abs(delta):.1f} points** "
-                            "vs the prior window")
+                            "from the window before")
             if share_yoy is not None and pd.notna(share_yoy):
                 delta = (share_now - share_yoy) * 100
                 bits.append(f"{'up' if delta >= 0 else 'down'} **{abs(delta):.1f} points** "
-                            "year over year")
+                            "from a year ago")
             sentences.append("; ".join(bits) + ".")
         if len(cur_d):
             peak = cur_d.loc[cur_d["demand_mwh"].idxmax()]
+            homes = peak["demand_mwh"] / 1.3 / 1000
             sentences.append(
-                f"**{name}** peaked at **{peak['demand_mwh']/1000:,.1f} GWh** on "
-                f"{peak['period_utc']:%Y-%m-%d at %H:00} UTC.")
+                f"**{name}**'s single busiest hour: "
+                f"**{peak['demand_mwh']/1000:,.1f} GWh** on "
+                f"{peak['period_utc']:%Y-%m-%d at %H:00} UTC — roughly enough "
+                f"for **{homes:,.0f} million homes** that hour.")
         if len(cur_m) and cur_m["net_load_mwh"].notna().any():
             belly = cur_m.loc[cur_m["net_load_mwh"].idxmin()]
             ramp = cur_m["ramp_mwh_per_h"].max()
             sentences.append(
-                f"**{name}** net load bottomed at "
-                f"**{belly['net_load_mwh']/1000:,.1f} GWh** "
-                f"({belly['period_utc']:%Y-%m-%d %H:00} UTC)"
-                + (f"; steepest evening ramp **+{ramp/1000:,.1f} GWh/h**."
+                f"Solar pushed **{name}**'s conventional power plants down to "
+                f"just **{belly['net_load_mwh']/1000:,.1f} GWh** at their "
+                f"quietest ({belly['period_utc']:%Y-%m-%d %H:00} UTC)"
+                + (f"; after sunset they ramped back up by as much as "
+                   f"**+{ramp/1000:,.1f} GWh in a single hour**."
                    if pd.notna(ramp) else "."))
 
     st.markdown("#### What the data says")
@@ -205,12 +234,14 @@ with tab_find:
 
 # ---------- Trends ----------
 with tab_trend:
-    st.subheader("Daily average demand")
+    st.subheader("How much electricity each region is using")
+    st.caption("Daily averages; higher line = more power used. 1 GWh ≈ one "
+               "hour of power for 750,000 homes.")
     freq = "D" if window_days <= 120 else "W"
     dd = (demand.assign(bucket=lambda d: d["period_utc"].dt.floor(freq))
           .pivot_table(index="bucket", columns="region", values="demand_mwh"))
     st.line_chart(dd.rename(columns=REGION_LABELS), height=320)
-    st.subheader("Daily average renewable share (%)")
+    st.subheader("Share of power from wind & solar (%)")
     ss = (metrics.assign(bucket=lambda d: d["period_utc"].dt.floor(freq),
                          pct=lambda d: d["renewable_share"] * 100)
           .pivot_table(index="bucket", columns="region", values="pct"))
@@ -219,7 +250,10 @@ with tab_trend:
 
 # ---------- Duck curve ----------
 with tab_duck:
-    st.subheader("Net load vs demand — any day on record")
+    st.subheader('The "duck curve" — solar reshaping the day')
+    st.caption("Gray dashed = everything people used. Solid = what "
+               "conventional power plants had to supply once wind and solar "
+               "chipped in. Midday sag + sunset surge = the duck.")
     col_a, col_b = st.columns([1, 3])
     region = col_a.selectbox("Region", regions or list(REGION_LABELS),
                              format_func=REGION_LABELS.get)
@@ -233,15 +267,16 @@ with tab_duck:
     if m.empty:
         st.info("No gold rows for that day — pick another.")
     else:
-        st.line_chart(pd.DataFrame({"Demand (MWh)": d["demand_mwh"],
-                                    "Net load (MWh)": m["net_load_mwh"]}), height=380)
+        st.line_chart(pd.DataFrame({"All power used (MWh)": d["demand_mwh"],
+                                    "Power plants supplied (MWh)": m["net_load_mwh"]}),
+                      height=380)
         ramp = m["ramp_mwh_per_h"].max()
         if pd.notna(ramp):
             st.caption(f"Steepest hourly ramp this day: +{int(ramp):,} MWh/h")
 
 # ---------- Daily profile ----------
 with tab_profile:
-    st.subheader("Average demand by hour of day (UTC) — when each grid peaks")
+    st.subheader("A typical day — when people use the most power")
     prof = (demand.assign(hour=lambda d: d["period_utc"].dt.hour)
             .pivot_table(index="hour", columns="region", values="demand_mwh"))
     st.line_chart(prof.rename(columns=REGION_LABELS), height=380)
@@ -252,7 +287,10 @@ with tab_profile:
 
 # ---------- Data quality ----------
 with tab_quality:
-    st.subheader("The quality panel — nothing fails silently")
+    st.subheader("Data checks — is this data trustworthy?")
+    st.caption("Every incoming number is checked. Odd-but-real values are "
+               "kept and labeled; values that fail checks are quarantined "
+               "with the reason — never silently deleted.")
     left, right = st.columns(2)
     with left:
         st.markdown("**Quality flags (kept + labeled, never dropped)**")
