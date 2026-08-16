@@ -6,6 +6,11 @@ on:
     # top-of-hour congestion window where GitHub delays cron jobs.
     - cron: "17 5,17 * * *"
   workflow_dispatch:
+  # Every code push redeploys the site automatically — design changes go
+  # live without a manual dispatch. The incremental ingest costs ~2 API
+  # calls per push, well inside the budget.
+  push:
+    branches: [main]
 
 # One pipeline at a time; a late cron never races a manual run.
 concurrency:
