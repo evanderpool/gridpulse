@@ -4,7 +4,7 @@ import re
 
 import httpx
 
-from conftest import wire_page
+from conftest import fuel_row, wire_page
 from gridpulse.cli import cmd_derive, cmd_ingest, cmd_transform
 from gridpulse.client import EiaClient
 from gridpulse.config import DEMAND_ROUTE, Settings
@@ -13,10 +13,8 @@ from gridpulse.storage import connect, table_checksum
 # Hour 23 exists in the demand fixture for ERCO, so gold gets exactly one
 # joined (region, period) row.
 FUELMIX_ROWS = [
-    {"period": "2026-08-13T23", "respondent": "ERCO", "fueltype": "SUN",
-     "value": 2000, "value-units": "megawatthours"},
-    {"period": "2026-08-13T23", "respondent": "ERCO", "fueltype": "NG",
-     "value": 8000, "value-units": "megawatthours"},
+    fuel_row(period="2026-08-13T23", fueltype="SUN", value=2000),
+    fuel_row(period="2026-08-13T23", fueltype="NG", value=8000),
 ]
 
 

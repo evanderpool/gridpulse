@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import polars as pl
 
 from .base import RENEWABLE_FUELS, SHARE_DECIMALS
+
+if TYPE_CHECKING:
+    from .base import Backend
 
 
 class PolarsBackend:
@@ -68,3 +73,9 @@ class PolarsBackend:
             .sort("region", "period_utc")
             .to_dicts()
         )
+
+
+if TYPE_CHECKING:
+    # Static conformance assertion: when the MVP typecheck gate lands, drift
+    # from the Protocol fails the build instead of waiting for contract tests.
+    _conforms: Backend = PolarsBackend()

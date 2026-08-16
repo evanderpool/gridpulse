@@ -1,6 +1,7 @@
-"""CLI: ``ingest`` (API → bronze) and ``transform`` (bronze → SQLite).
+"""CLI: ``ingest`` (API → bronze), ``transform`` (bronze → silver), and
+``derive`` (silver → gold, backend via GRIDPULSE_BACKEND).
 
-Stages are separate commands on purpose: transform never touches the network,
+Stages are separate commands on purpose: only ingest touches the network,
 so any conversion bug is reproducible offline from the exact bronze bytes
 that triggered it. Functions here orchestrate only — parsing, conversion,
 and persistence live in their modules.
@@ -11,7 +12,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import logging
-import os
 import secrets
 import subprocess
 import time
@@ -154,13 +154,16 @@ def cmd_derive(settings: Settings) -> int:
     """Recompute the gold metrics table from silver via the configured backend."""
     run_id = _run_id()
     t0 = time.monotonic()
-    backend = get_backend(os.environ.get("GRIDPULSE_BACKEND", "polars"))
+    backend = get_backend()  # resolves GRIDPULSE_BACKEND, defaults to polars
     with contextlib.closing(connect(settings.db_path)) as conn:
         written = derive_to_gold(conn, backend)
         record_run(conn, _run_row(
             run_id, "derive", rows_valid=written, rows_upserted=written, t0=t0,
         ))
     _log(run_id, "derive", backend=backend.name, metrics_rows=written)
+    if written == 0:
+        _log(run_id, "derive", note="0 metric rows - silver is empty or the "
+             "datasets share no (region, hour); run ingest + transform first")
     return 0
 
 

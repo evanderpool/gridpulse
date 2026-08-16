@@ -124,6 +124,9 @@ gridpulse transform                           # idempotent; re-run freely
 gridpulse derive                              # silver → gold metrics
 ```
 
+The dataframe engine behind `derive` is selected with `GRIDPULSE_BACKEND`
+(default `polars`) — the swappable-backend design's one config line.
+
 An EIA API key (free) goes in `.env` (gitignored) as `EIA_API_KEY=...` —
 never in the repo, and a GitHub Actions secret in CI.
 

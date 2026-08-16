@@ -21,14 +21,51 @@ same cases against each):
   not fabricate a ramp.
 - Only (region, period) pairs present in BOTH inputs produce a row; output
   is sorted by (region, period_utc).
+- Quality flags are deliberately NOT inputs: the read shape carries values
+  only, and flagged values enter metric math AS OBSERVED — the single
+  exception is the negative-clip above, which is re-derivable from sign.
+  In particular an ``extreme_value``-flagged row flows into gold unaltered;
+  surfacing flags is the report's job (from silver), not gold's. A
+  flag-aware gold policy would require widening the read shape — a contract
+  change, not a backend change.
 """
 
 from __future__ import annotations
 
-from typing import Protocol
+import os
+from typing import Protocol, TypedDict
 
 RENEWABLE_FUELS = ("SUN", "WND")
 SHARE_DECIMALS = 4
+DEFAULT_BACKEND = "polars"
+BACKEND_ENV_VAR = "GRIDPULSE_BACKEND"
+
+
+class DemandRow(TypedDict):
+    """Backend input: one silver demand observation (flags excluded — see above)."""
+
+    region: str
+    period_utc: str
+    demand_mwh: int
+
+
+class FuelMixRow(TypedDict):
+    """Backend input: one silver generation observation (flags excluded)."""
+
+    region: str
+    period_utc: str
+    fueltype: str
+    generation_mwh: int
+
+
+class MetricRow(TypedDict):
+    """Backend output: one gold metric row."""
+
+    region: str
+    period_utc: str
+    renewable_share: float | None
+    net_load_mwh: int
+    ramp_mwh_per_h: int | None
 
 
 class Backend(Protocol):
@@ -37,19 +74,24 @@ class Backend(Protocol):
     name: str
 
     def derive_metrics(
-        self, demand_rows: list[dict], fuelmix_rows: list[dict]
-    ) -> list[dict]:
+        self, demand_rows: list[DemandRow], fuelmix_rows: list[FuelMixRow]
+    ) -> list[MetricRow]:
         """Compute the metric rows per the contract in this module's docstring."""
         ...
 
 
-def get_backend(name: str = "polars") -> Backend:
-    """Resolve a backend by name — the one-config-line engine swap."""
-    if name == "polars":
+def get_backend(name: str | None = None) -> Backend:
+    """Resolve a backend by name — the one-config-line engine swap.
+
+    ``None`` reads the ``GRIDPULSE_BACKEND`` env var, defaulting to polars.
+    """
+    name = name or os.environ.get(BACKEND_ENV_VAR, DEFAULT_BACKEND)
+    if name == DEFAULT_BACKEND:
         from .polars_backend import PolarsBackend
 
         return PolarsBackend()
     raise ValueError(
-        f"unknown backend {name!r} — available: 'polars' "
-        "(a pandas backend arrives in a stretch phase, same contract)"
+        f"unknown backend {name!r} — available: '{DEFAULT_BACKEND}'. "
+        f"Fix: set {BACKEND_ENV_VAR}={DEFAULT_BACKEND} (or unset it); a pandas "
+        "backend arrives in a stretch phase, same contract."
     )

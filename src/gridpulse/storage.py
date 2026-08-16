@@ -193,7 +193,11 @@ def upsert_fuelmix(conn: sqlite3.Connection, records: list[FuelMixRecord]) -> in
 
 
 def read_demand(conn: sqlite3.Connection) -> list[dict]:
-    """Silver demand rows in the shape the backend contract expects."""
+    """Silver demand rows in the shape the backend contract expects.
+
+    quality_flags is deliberately excluded — flags are not backend inputs
+    (see convert/backends/base.py); the report surfaces flags from silver.
+    """
     return [
         {"region": r[0], "period_utc": r[1], "demand_mwh": r[2]}
         for r in conn.execute(
@@ -203,7 +207,10 @@ def read_demand(conn: sqlite3.Connection) -> list[dict]:
 
 
 def read_fuelmix(conn: sqlite3.Connection) -> list[dict]:
-    """Silver fuel-mix rows in the shape the backend contract expects."""
+    """Silver fuel-mix rows in the shape the backend contract expects.
+
+    quality_flags is deliberately excluded — see read_demand's note.
+    """
     return [
         {"region": r[0], "period_utc": r[1], "fueltype": r[2], "generation_mwh": r[3]}
         for r in conn.execute(

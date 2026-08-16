@@ -21,6 +21,14 @@ def good_row(**overrides) -> dict:
     return row
 
 
+def fuel_row(**overrides) -> dict:
+    """One valid fuel-mix row in wire shape."""
+    row = {"period": "2026-08-13T18", "respondent": "ERCO", "fueltype": "NG",
+           "value": 7000, "value-units": "megawatthours"}
+    row.update(overrides)
+    return row
+
+
 def wire_page(rows: list[dict], total: int | None = None) -> dict:
     """A response page exactly as EIA serves it — total is a STRING."""
     return {

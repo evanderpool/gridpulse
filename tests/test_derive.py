@@ -1,17 +1,10 @@
 """Silver → gold end to end, including recompute determinism."""
 
-from conftest import bronze_rows, good_row
+from conftest import bronze_rows, fuel_row, good_row
 from gridpulse.convert.backends import get_backend
 from gridpulse.convert.derive import derive_to_gold
 from gridpulse.convert.pipeline import convert_demand, convert_fuelmix
 from gridpulse.storage import connect, table_checksum, upsert_demand, upsert_fuelmix
-
-
-def fuel_row(**overrides) -> dict:
-    row = {"period": "2026-08-13T18", "respondent": "ERCO", "fueltype": "NG",
-           "value": 7000, "value-units": "megawatthours"}
-    row.update(overrides)
-    return row
 
 
 def seeded_conn(tmp_path):
