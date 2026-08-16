@@ -94,6 +94,9 @@ def cmd_transform(settings: Settings) -> int:
 def main(argv: list[str] | None = None) -> int:
     """Entry point for ``python -m gridpulse``."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    # httpx logs full request URLs at INFO — including the api_key query
+    # param. In CI those logs are public, so this stays WARNING forever.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(prog="gridpulse")
     sub = parser.add_subparsers(dest="command", required=True)
     p_ingest = sub.add_parser("ingest", help="fetch a demand window into bronze")
