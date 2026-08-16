@@ -7,7 +7,7 @@ variables win over it. The API key is never written anywhere by this package.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 BASE_URL = "https://api.eia.gov/v2"
@@ -47,7 +47,8 @@ class Settings:
     cap counted per HTTP request (retries included), enforced in the client.
     """
 
-    api_key: str
+    # repr=False so repr(settings) in a log or traceback never prints the key.
+    api_key: str = field(repr=False)
     data_dir: Path
     max_requests_per_run: int = 25
     max_retries: int = 4

@@ -36,8 +36,20 @@ def convert_demand(bronze_docs: list[dict]) -> tuple[list[DemandRecord], list[Re
     for doc in sorted(bronze_docs, key=lambda d: d["fetched_at"]):
         fetched_at = doc["fetched_at"]
         for raw_row in doc["payload"]["response"]["data"]:
+            # The whole row lifecycle stays inside one try: a regex-valid but
+            # unparseable period ("2026-02-30T05") raises ValueError from
+            # strptime, and that must quarantine the row — never abort the
+            # run (review finding HIGH-1).
             try:
                 row = RawDemandRow.model_validate(raw_row)
+                records.append(
+                    DemandRecord(
+                        region=row.respondent,
+                        period_utc=parse_eia_period(row.period).isoformat(),
+                        demand_mwh=row.value,
+                        fetched_at=fetched_at,
+                    )
+                )
             except ValidationError as exc:
                 rejects.append(
                     Reject(
@@ -49,13 +61,6 @@ def convert_demand(bronze_docs: list[dict]) -> tuple[list[DemandRecord], list[Re
                         fetched_at=fetched_at,
                     )
                 )
-                continue
-            records.append(
-                DemandRecord(
-                    region=row.respondent,
-                    period_utc=parse_eia_period(row.period).isoformat(),
-                    demand_mwh=row.value,
-                    fetched_at=fetched_at,
-                )
-            )
+            except ValueError as exc:
+                rejects.append(Reject(raw=raw_row, error=f"period: {exc}", fetched_at=fetched_at))
     return records, rejects

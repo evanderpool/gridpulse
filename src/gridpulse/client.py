@@ -22,7 +22,13 @@ RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class PullBudgetExceeded(RuntimeError):
-    """Raised when a run tries to make more requests than the budget allows."""
+    """Raised when a run tries to make more requests than the budget allows.
+
+    Carries ``pages``: payloads fetched before the cap hit, so callers can
+    persist partial work instead of re-spending budget on it.
+    """
+
+    pages: list[dict] = []
 
 
 class EiaClient:
@@ -74,15 +80,29 @@ class EiaClient:
                     )
                 self._sleep(self.settings.backoff_base_seconds * 2 ** (attempts - 1))
                 continue
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                # Never raise_for_status(): httpx embeds the full URL — key
+                # included — in its message, and 401 is exactly the status an
+                # invalid key produces (review finding MED-1).
+                raise RuntimeError(
+                    f"EIA returned {resp.status_code} for {route}. "
+                    "Fix: 401/403 means the key is invalid — check EIA_API_KEY; "
+                    "400 means bad params — inspect the window arguments."
+                )
             return resp.json()
 
     def fetch_demand_window(self, start: str, end: str) -> list[dict]:
         """Fetch hourly demand for all target regions over [start, end].
 
-        Returns the verbatim response payloads, one per page. Pagination uses
-        the server-reported total; the generic "incomplete return" warning on
+        Returns the verbatim response payloads, one per page. The offset
+        advances by rows actually received — NEVER by the requested page
+        length or the server total, which is a string and reports the full
+        result set, not this page. The generic "incomplete return" warning on
         every response is noise and deliberately ignored.
+
+        If the pull budget dies mid-window, pages already fetched are
+        attached to the exception (``exc.pages``) so the caller can persist
+        what was paid for.
         """
         params = {
             "frequency": "hourly",
@@ -100,7 +120,11 @@ class EiaClient:
         pages: list[dict] = []
         offset = 0
         while True:
-            page = self._get(DEMAND_ROUTE, {**params, "offset": offset})
+            try:
+                page = self._get(DEMAND_ROUTE, {**params, "offset": offset})
+            except PullBudgetExceeded as exc:
+                exc.pages = pages  # budget spent — don't discard what it bought
+                raise
             pages.append(page)
             total = int(page["response"]["total"])
             offset += len(page["response"]["data"])

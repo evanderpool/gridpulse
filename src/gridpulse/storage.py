@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS quarantine (
     raw         TEXT NOT NULL,
     error       TEXT NOT NULL
 );
+-- Transform re-reads ALL bronze every run; without this, one bad row becomes
+-- one new quarantine row per run forever (review finding MED-2). raw is
+-- canonical JSON (sort_keys), so it dedups reliably.
+CREATE UNIQUE INDEX IF NOT EXISTS quarantine_dedup ON quarantine (fetched_at, raw);
 CREATE TABLE IF NOT EXISTS pipeline_runs (
     run_id           TEXT NOT NULL,
     stage            TEXT NOT NULL,
@@ -57,6 +61,11 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
     The WHERE guard makes ordering irrelevant: an older fetch can never
     overwrite a newer one, even if bronze files are replayed out of order.
     """
+    # Guard shape matters (review finding MED-3): strictly-newer always wins;
+    # an equal-timestamp write fires only when the value differs, so an
+    # identical replay counts 0 and the ledger can SEE idempotency. Do not
+    # "simplify" to `>= AND value differs` — that skips the fetched_at
+    # refresh and reopens the stale-downgrade hole.
     cur = conn.executemany(
         """
         INSERT INTO demand_hourly (region, period_utc, demand_mwh, fetched_at)
@@ -64,7 +73,9 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
         ON CONFLICT(region, period_utc) DO UPDATE SET
             demand_mwh = excluded.demand_mwh,
             fetched_at = excluded.fetched_at
-        WHERE excluded.fetched_at >= demand_hourly.fetched_at
+        WHERE excluded.fetched_at > demand_hourly.fetched_at
+           OR (excluded.fetched_at = demand_hourly.fetched_at
+               AND excluded.demand_mwh != demand_hourly.demand_mwh)
         """,
         [r.model_dump() for r in records],
     )
@@ -72,13 +83,19 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
     return cur.rowcount
 
 
-def write_quarantine(conn: sqlite3.Connection, run_id: str, rejects: list[Reject]) -> None:
-    """Persist failed rows with their errors — quarantined, never dropped."""
-    conn.executemany(
-        "INSERT INTO quarantine (run_id, fetched_at, raw, error) VALUES (?, ?, ?, ?)",
+def write_quarantine(conn: sqlite3.Connection, run_id: str, rejects: list[Reject]) -> int:
+    """Persist failed rows with their errors — quarantined, never dropped.
+
+    Returns the number of NEWLY quarantined rows; re-seen failures are
+    ignored (run_id records first-seen). That count is what the metrics
+    ledger reports, so the quarantine rate can decay once data is clean.
+    """
+    cur = conn.executemany(
+        "INSERT OR IGNORE INTO quarantine (run_id, fetched_at, raw, error) VALUES (?, ?, ?, ?)",
         [(run_id, r.fetched_at, json.dumps(r.raw, sort_keys=True), r.error) for r in rejects],
     )
     conn.commit()
+    return cur.rowcount
 
 
 def record_run(conn: sqlite3.Connection, row: dict) -> None:

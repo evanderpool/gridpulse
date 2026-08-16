@@ -18,7 +18,10 @@ def settings(tmp_path, **kw) -> Settings:
 
 
 def page(rows: list[dict], total: int) -> dict:
-    return {"response": {"total": total, "data": rows},
+    # total is a STRING on the real wire (fixture-verified) — tests must
+    # feed the wire shape or the int() coercion becomes silently deletable
+    # (review finding MED-4).
+    return {"response": {"total": str(total), "data": rows},
             "request": {"command": "/v2/...", "params": {"api_key": "test-key"}}}
 
 
@@ -57,7 +60,7 @@ def test_retries_on_500_with_backoff_then_succeeds(tmp_path):
     pages = client.fetch_demand_window("a", "b")
     assert len(attempts) == 3
     assert sleeps == [1.0, 2.0]  # exponential
-    assert pages[0]["response"]["total"] == 1
+    assert pages[0]["response"]["total"] == "1"
 
 
 def test_pull_budget_is_a_hard_cap_with_fix_path(tmp_path):

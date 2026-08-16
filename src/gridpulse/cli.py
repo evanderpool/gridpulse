@@ -15,9 +15,9 @@ import subprocess
 import time
 from datetime import datetime, timezone
 
-from .client import EiaClient, write_bronze
+from .client import EiaClient, PullBudgetExceeded, write_bronze
 from .config import Settings
-from .convert.pipeline import convert_demand
+from .convert.pipeline import Reject, convert_demand
 from .storage import connect, record_run, upsert_demand, write_quarantine
 
 log = logging.getLogger("gridpulse")
@@ -49,8 +49,16 @@ def cmd_ingest(settings: Settings, start: str, end: str, client: EiaClient | Non
     run_id = _run_id()
     t0 = time.monotonic()
     client = client or EiaClient(settings)
-    pages = client.fetch_demand_window(start, end)
     window = f"{start}_{end}".replace(":", "")
+    try:
+        pages = client.fetch_demand_window(start, end)
+    except PullBudgetExceeded as exc:
+        # Budget spent — persist what it bought before failing, so the
+        # narrowed re-run doesn't pay for these pages again.
+        if exc.pages:
+            write_bronze(exc.pages, run_id, settings.bronze_dir, window + "_partial")
+            _log(run_id, "ingest", note=f"budget hit: {len(exc.pages)} partial pages saved")
+        raise
     paths = write_bronze(pages, run_id, settings.bronze_dir, window)
     rows = sum(len(p["response"]["data"]) for p in pages)
     conn = connect(settings.db_path)
@@ -69,24 +77,38 @@ def cmd_transform(settings: Settings) -> int:
     """Convert every bronze document into the silver table. Idempotent."""
     run_id = _run_id()
     t0 = time.monotonic()
-    docs = [
-        json.loads(p.read_text(encoding="utf-8"))
-        for p in sorted(settings.bronze_dir.glob("*.json"))
-    ]
+    docs: list[dict] = []
+    doc_rejects: list[Reject] = []
+    # Only pipeline-written files; a corrupt or hand-dropped file becomes a
+    # doc-level quarantine entry, never a run abort (review finding LOW-3).
+    for p in sorted(settings.bronze_dir.glob("demand_*.json")):
+        try:
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            doc["fetched_at"], doc["payload"]["response"]["data"]
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            doc_rejects.append(Reject(
+                raw={"bronze_file": p.name},
+                error=f"unreadable bronze document: {exc!r}",
+                fetched_at="",
+            ))
+            continue
+        docs.append(doc)
     records, rejects = convert_demand(docs)
+    rejects = doc_rejects + rejects
     conn = connect(settings.db_path)
     upserted = upsert_demand(conn, records)
-    write_quarantine(conn, run_id, rejects)
+    newly_quarantined = write_quarantine(conn, run_id, rejects)
     record_run(conn, {
         "run_id": run_id, "stage": "transform",
         "started_at": datetime.now(timezone.utc).isoformat(), "git_sha": _git_sha(),
         "rows_received": len(records) + len(rejects), "rows_valid": len(records),
-        "rows_quarantined": len(rejects), "rows_upserted": upserted,
+        "rows_quarantined": newly_quarantined, "rows_upserted": upserted,
         "api_calls": 0, "runtime_seconds": round(time.monotonic() - t0, 3),
     })
-    _log(run_id, "transform", valid=len(records), quarantined=len(rejects), upserted=upserted)
-    if rejects:
-        _log(run_id, "transform", note=f"{len(rejects)} rows quarantined - "
+    _log(run_id, "transform", valid=len(records), quarantined=newly_quarantined,
+         upserted=upserted)
+    if newly_quarantined:
+        _log(run_id, "transform", note=f"{newly_quarantined} NEW rows quarantined - "
              f"inspect: SELECT error, raw FROM quarantine WHERE run_id='{run_id}'")
     return 0
 

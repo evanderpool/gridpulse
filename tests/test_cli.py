@@ -15,7 +15,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 def offline_client(settings: Settings) -> EiaClient:
     payload = json.loads((FIXTURES / "demand_hourly_4regions.json").read_text(encoding="utf-8"))
-    payload["response"]["total"] = len(payload["response"]["data"])
+    payload["response"]["total"] = str(len(payload["response"]["data"]))  # wire shape: string
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert "api_key" in dict(request.url.params)
