@@ -12,6 +12,7 @@ from pathlib import Path
 
 BASE_URL = "https://api.eia.gov/v2"
 DEMAND_ROUTE = "electricity/rto/region-data/data/"
+FUELMIX_ROUTE = "electricity/rto/fuel-type-data/data/"
 
 # Locked in Phase 0 (see DECISIONS.md): the four target balancing authorities.
 REGIONS = ("ERCO", "CISO", "MISO", "PJM")

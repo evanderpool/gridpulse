@@ -69,6 +69,32 @@ def test_quarantine_preserves_raw_row_and_error(tmp_path):
     conn.close()
 
 
+def test_phase1_era_database_gains_quality_flags_column(tmp_path):
+    # Additive migration: a DB created before Phase 2 lacks quality_flags;
+    # connect() must add it without touching existing rows.
+    import sqlite3
+
+    db = tmp_path / "old.db"
+    old = sqlite3.connect(db)
+    old.execute(
+        "CREATE TABLE demand_hourly (region TEXT NOT NULL, period_utc TEXT NOT NULL, "
+        "demand_mwh INTEGER NOT NULL, fetched_at TEXT NOT NULL, "
+        "PRIMARY KEY (region, period_utc))"
+    )
+    old.execute("INSERT INTO demand_hourly VALUES ('ERCO', 'p', 100, 'f')")
+    old.commit()
+    old.close()
+
+    conn = connect(db)
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(demand_hourly)")}
+    assert "quality_flags" in cols
+    region, flags = conn.execute(
+        "SELECT region, quality_flags FROM demand_hourly"
+    ).fetchone()
+    assert region == "ERCO" and flags == ""
+    conn.close()
+
+
 def test_table_checksum_rejects_unknown_table_with_valid_names(tmp_path):
     conn = connect(tmp_path / "t.db")
     try:

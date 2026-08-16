@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from .convert.pipeline import Reject
-from .schemas.clean import DemandRecord
+from .schemas.clean import DemandRecord, FuelMixRecord
 
 
 class RunRow(TypedDict):
@@ -32,10 +32,28 @@ class RunRow(TypedDict):
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS demand_hourly (
-    region      TEXT NOT NULL,
-    period_utc  TEXT NOT NULL,
-    demand_mwh  INTEGER NOT NULL,
-    fetched_at  TEXT NOT NULL,
+    region        TEXT NOT NULL,
+    period_utc    TEXT NOT NULL,
+    demand_mwh    INTEGER NOT NULL,
+    quality_flags TEXT NOT NULL DEFAULT '',
+    fetched_at    TEXT NOT NULL,
+    PRIMARY KEY (region, period_utc)
+);
+CREATE TABLE IF NOT EXISTS fuelmix_hourly (
+    region         TEXT NOT NULL,
+    period_utc     TEXT NOT NULL,
+    fueltype       TEXT NOT NULL,
+    generation_mwh INTEGER NOT NULL,
+    quality_flags  TEXT NOT NULL DEFAULT '',
+    fetched_at     TEXT NOT NULL,
+    PRIMARY KEY (region, period_utc, fueltype)
+);
+CREATE TABLE IF NOT EXISTS metrics_hourly (
+    region          TEXT NOT NULL,
+    period_utc      TEXT NOT NULL,
+    renewable_share REAL,
+    net_load_mwh    INTEGER NOT NULL,
+    ramp_mwh_per_h  INTEGER,
     PRIMARY KEY (region, period_utc)
 );
 CREATE TABLE IF NOT EXISTS quarantine (
@@ -73,18 +91,31 @@ def connect(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA)
+    _ensure_column(conn, "demand_hourly", "quality_flags", "TEXT NOT NULL DEFAULT ''")
     return conn
 
 
-def read_bronze_docs(bronze_dir: Path) -> tuple[list[dict], list[Reject]]:
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
+    """Additive migration: databases created before a column gain it here.
+
+    CREATE TABLE IF NOT EXISTS never alters existing tables, so schema
+    additions must be applied explicitly to Phase-1-era databases.
+    """
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        conn.commit()
+
+
+def read_bronze_docs(bronze_dir: Path, dataset: str = "demand") -> tuple[list[dict], list[Reject]]:
     """Load pipeline-written bronze documents; unreadable files become Rejects.
 
-    Only ``demand_*.json`` is considered ours — a stray or truncated file is
-    quarantined at document level, never allowed to abort a run.
+    Only ``<dataset>_*.json`` is considered ours — a stray or truncated file
+    is quarantined at document level, never allowed to abort a run.
     """
     docs: list[dict] = []
     rejects: list[Reject] = []
-    for path in sorted(bronze_dir.glob("demand_*.json")):
+    for path in sorted(bronze_dir.glob(f"{dataset}_*.json")):
         try:
             doc = json.loads(path.read_text(encoding="utf-8"))
             fetched_at = doc["fetched_at"]
@@ -120,10 +151,11 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
     # refresh and reopens the stale-downgrade hole.
     cur = conn.executemany(
         """
-        INSERT INTO demand_hourly (region, period_utc, demand_mwh, fetched_at)
-        VALUES (:region, :period_utc, :demand_mwh, :fetched_at)
+        INSERT INTO demand_hourly (region, period_utc, demand_mwh, quality_flags, fetched_at)
+        VALUES (:region, :period_utc, :demand_mwh, :quality_flags, :fetched_at)
         ON CONFLICT(region, period_utc) DO UPDATE SET
             demand_mwh = excluded.demand_mwh,
+            quality_flags = excluded.quality_flags,
             fetched_at = excluded.fetched_at
         WHERE excluded.fetched_at > demand_hourly.fetched_at
            OR (excluded.fetched_at = demand_hourly.fetched_at
@@ -133,6 +165,67 @@ def upsert_demand(conn: sqlite3.Connection, records: list[DemandRecord]) -> int:
     )
     conn.commit()
     return cur.rowcount
+
+
+def upsert_fuelmix(conn: sqlite3.Connection, records: list[FuelMixRecord]) -> int:
+    """Idempotent upsert keyed on (region, period_utc, fueltype); same guard
+    shape as demand — see upsert_demand's comment for why."""
+    cur = conn.executemany(
+        """
+        INSERT INTO fuelmix_hourly
+            (region, period_utc, fueltype, generation_mwh, quality_flags, fetched_at)
+        VALUES (:region, :period_utc, :fueltype, :generation_mwh, :quality_flags, :fetched_at)
+        ON CONFLICT(region, period_utc, fueltype) DO UPDATE SET
+            generation_mwh = excluded.generation_mwh,
+            quality_flags = excluded.quality_flags,
+            fetched_at = excluded.fetched_at
+        WHERE excluded.fetched_at > fuelmix_hourly.fetched_at
+           OR (excluded.fetched_at = fuelmix_hourly.fetched_at
+               AND excluded.generation_mwh != fuelmix_hourly.generation_mwh)
+        """,
+        [r.model_dump() for r in records],
+    )
+    conn.commit()
+    return cur.rowcount
+
+
+def read_demand(conn: sqlite3.Connection) -> list[dict]:
+    """Silver demand rows in the shape the backend contract expects."""
+    return [
+        {"region": r[0], "period_utc": r[1], "demand_mwh": r[2]}
+        for r in conn.execute(
+            "SELECT region, period_utc, demand_mwh FROM demand_hourly ORDER BY region, period_utc"
+        )
+    ]
+
+
+def read_fuelmix(conn: sqlite3.Connection) -> list[dict]:
+    """Silver fuel-mix rows in the shape the backend contract expects."""
+    return [
+        {"region": r[0], "period_utc": r[1], "fueltype": r[2], "generation_mwh": r[3]}
+        for r in conn.execute(
+            "SELECT region, period_utc, fueltype, generation_mwh FROM fuelmix_hourly "
+            "ORDER BY region, period_utc, fueltype"
+        )
+    ]
+
+
+def replace_metrics(conn: sqlite3.Connection, metrics: list[dict]) -> None:
+    """Full-recompute write of the gold table, atomically.
+
+    Gold is derived state (see convert/derive.py) — replaced whole, never
+    patched, so it can never drift from silver.
+    """
+    with conn:
+        conn.execute("DELETE FROM metrics_hourly")
+        conn.executemany(
+            """
+            INSERT INTO metrics_hourly
+                (region, period_utc, renewable_share, net_load_mwh, ramp_mwh_per_h)
+            VALUES (:region, :period_utc, :renewable_share, :net_load_mwh, :ramp_mwh_per_h)
+            """,
+            metrics,
+        )
 
 
 def write_quarantine(conn: sqlite3.Connection, run_id: str, rejects: list[Reject]) -> int:
@@ -166,7 +259,7 @@ def record_run(conn: sqlite3.Connection, row: RunRow) -> None:
 
 def table_checksum(conn: sqlite3.Connection, table: str) -> str:
     """Deterministic digest of a table's full contents (for idempotency tests)."""
-    allowed = {"demand_hourly", "quarantine", "pipeline_runs"}
+    allowed = {"demand_hourly", "fuelmix_hourly", "metrics_hourly", "quarantine", "pipeline_runs"}
     if table not in allowed:
         raise ValueError(f"unknown table {table!r} — valid tables: {sorted(allowed)}")
     rows = conn.execute(f"SELECT * FROM {table} ORDER BY 1, 2").fetchall()

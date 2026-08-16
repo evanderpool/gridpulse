@@ -12,11 +12,10 @@ license = { text = "MIT" }
 authors = [{ name = "Erick Vanderpool" }]
 keywords = ["data-engineering", "eia", "electricity", "pipeline", "polars"]
 
-# Polars arrives with the Phase 2 backend interface — no dependency ships
-# before the code that imports it (right-sizing is the house rule).
 dependencies = [
     "httpx>=0.27",
     "pydantic>=2.7",
+    "polars>=1.0",
 ]
 
 [project.optional-dependencies]

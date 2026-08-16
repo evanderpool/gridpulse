@@ -1,48 +1,74 @@
-"""End-to-end slice test, fully offline: ingest → bronze → transform → SQLite."""
+"""End-to-end test, fully offline: ingest → bronze → transform → derive → gold."""
 
 import re
 
 import httpx
 
-from gridpulse.cli import cmd_ingest, cmd_transform
+from conftest import wire_page
+from gridpulse.cli import cmd_derive, cmd_ingest, cmd_transform
 from gridpulse.client import EiaClient
-from gridpulse.config import Settings
+from gridpulse.config import DEMAND_ROUTE, Settings
 from gridpulse.storage import connect, table_checksum
 
+# Hour 23 exists in the demand fixture for ERCO, so gold gets exactly one
+# joined (region, period) row.
+FUELMIX_ROWS = [
+    {"period": "2026-08-13T23", "respondent": "ERCO", "fueltype": "SUN",
+     "value": 2000, "value-units": "megawatthours"},
+    {"period": "2026-08-13T23", "respondent": "ERCO", "fueltype": "NG",
+     "value": 8000, "value-units": "megawatthours"},
+]
 
-def offline_client(settings: Settings, payload: dict) -> EiaClient:
-    payload = {**payload}
-    payload["response"] = {**payload["response"],
-                           "total": str(len(payload["response"]["data"]))}
+
+def offline_client(settings: Settings, demand_payload: dict) -> EiaClient:
+    demand_payload = {**demand_payload}
+    demand_payload["response"] = {
+        **demand_payload["response"],
+        "total": str(len(demand_payload["response"]["data"])),  # wire shape: string
+    }
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert "api_key" in dict(request.url.params)
-        return httpx.Response(200, json=payload)
+        if DEMAND_ROUTE.rstrip("/") in str(request.url):
+            return httpx.Response(200, json=demand_payload)
+        return httpx.Response(200, json=wire_page(FUELMIX_ROWS))
 
     return EiaClient(settings, transport=httpx.MockTransport(handler))
 
 
-def test_vertical_slice_end_to_end(tmp_path, demand_payload):
+def test_full_pipeline_end_to_end(tmp_path, demand_payload):
     settings = Settings(api_key="test-key", data_dir=tmp_path / "data")
 
     assert cmd_ingest(settings, "2026-08-13T00", "2026-08-14T00",
                       client=offline_client(settings, demand_payload)) == 0
-    bronze = list(settings.bronze_dir.glob("*.json"))
-    assert len(bronze) == 1
-    assert "test-key" not in bronze[0].read_text(encoding="utf-8")
+    bronze = sorted(p.name for p in settings.bronze_dir.glob("*.json"))
+    assert len(bronze) == 2
+    assert bronze[0].startswith("demand_") and bronze[1].startswith("fuelmix_")
+    assert all("test-key" not in (settings.bronze_dir / n).read_text(encoding="utf-8")
+               for n in bronze)
 
     assert cmd_transform(settings) == 0
+    assert cmd_derive(settings) == 0
     conn = connect(settings.db_path)
-    n = conn.execute("SELECT COUNT(*) FROM demand_hourly").fetchone()[0]
-    assert n == 20  # the fixture page holds 20 rows (server total is 100)
+    assert conn.execute("SELECT COUNT(*) FROM demand_hourly").fetchone()[0] == 20
+    assert conn.execute("SELECT COUNT(*) FROM fuelmix_hourly").fetchone()[0] == 2
+    # Gold: the one hour with both demand and fuel data → share 0.2.
+    share = conn.execute(
+        "SELECT renewable_share FROM metrics_hourly WHERE region='ERCO'"
+    ).fetchone()[0]
+    assert share == 0.2
     stages = [r[0] for r in conn.execute("SELECT stage FROM pipeline_runs ORDER BY stage")]
-    assert stages == ["ingest", "transform"]
+    assert stages == ["derive", "ingest", "transform"]
 
-    # Transform again over the same bronze: the silver table must not move,
-    # and the ledger must SEE the no-op (0 upserted).
-    before = table_checksum(conn, "demand_hourly")
+    # Transform + derive again: silver and gold must not move, and the
+    # ledger must SEE the no-op (0 upserted).
+    before = (table_checksum(conn, "demand_hourly"), table_checksum(conn, "fuelmix_hourly"),
+              table_checksum(conn, "metrics_hourly"))
     assert cmd_transform(settings) == 0
-    assert table_checksum(conn, "demand_hourly") == before
+    assert cmd_derive(settings) == 0
+    after = (table_checksum(conn, "demand_hourly"), table_checksum(conn, "fuelmix_hourly"),
+             table_checksum(conn, "metrics_hourly"))
+    assert after == before
     last_upserted = conn.execute(
         "SELECT rows_upserted FROM pipeline_runs WHERE stage='transform' "
         "ORDER BY started_at DESC LIMIT 1"
@@ -60,6 +86,17 @@ def test_metrics_ledger_records_counts_and_sha(tmp_path, demand_payload):
         "SELECT rows_valid, rows_quarantined, git_sha FROM pipeline_runs "
         "WHERE stage='transform'"
     ).fetchone()
-    assert valid == 20 and quarantined == 0
+    assert valid == 22 and quarantined == 0  # 20 demand + 2 fuelmix
     assert re.fullmatch(r"[0-9a-f]{7,}|unknown", sha)
+    conn.close()
+
+
+def test_single_dataset_ingest_flag(tmp_path, demand_payload):
+    settings = Settings(api_key="test-key", data_dir=tmp_path / "data")
+    cmd_ingest(settings, "a", "b", client=offline_client(settings, demand_payload),
+               datasets=("demand",))
+    names = [p.name for p in settings.bronze_dir.glob("*.json")]
+    assert len(names) == 1 and names[0].startswith("demand_")
+    conn = connect(settings.db_path)
+    assert conn.execute("SELECT rows_received FROM pipeline_runs").fetchone()[0] == 20
     conn.close()

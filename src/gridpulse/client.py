@@ -17,7 +17,7 @@ from typing import Callable
 import httpx
 from pydantic import ValidationError
 
-from .config import BASE_URL, DEMAND_ROUTE, PAGE_LENGTH, REGIONS, Settings
+from .config import BASE_URL, DEMAND_ROUTE, FUELMIX_ROUTE, PAGE_LENGTH, REGIONS, Settings
 from .schemas.raw import RawResponseMeta
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
@@ -108,7 +108,21 @@ class EiaClient:
             return resp.json()
 
     def fetch_demand_window(self, start: str, end: str) -> list[dict]:
-        """Fetch hourly demand for all target regions over [start, end].
+        """Fetch hourly demand for all target regions over [start, end]."""
+        return self._fetch_window(DEMAND_ROUTE, start, end, {"facets[type][]": "D"})
+
+    def fetch_fuelmix_window(self, start: str, end: str) -> list[dict]:
+        """Fetch hourly generation by fuel type for all target regions.
+
+        No fueltype facet: the vocabulary differs per region (pinned
+        fixture), so filtering server-side would silently drop fuels.
+        """
+        return self._fetch_window(FUELMIX_ROUTE, start, end, {})
+
+    def _fetch_window(
+        self, route: str, start: str, end: str, extra_facets: dict
+    ) -> list[dict]:
+        """Shared paginated fetch over [start, end].
 
         Returns the verbatim response payloads, one per page. The offset
         advances by rows actually received — NEVER by the requested page
@@ -123,12 +137,12 @@ class EiaClient:
         params = {
             "frequency": "hourly",
             "data[0]": "value",
-            "facets[type][]": "D",
             "start": start,
             "end": end,
             "length": PAGE_LENGTH,
             "sort[0][column]": "period",
             "sort[0][direction]": "asc",
+            **extra_facets,
         }
         for i, region in enumerate(REGIONS):
             params[f"facets[respondent][{i}]"] = region
@@ -137,7 +151,7 @@ class EiaClient:
         offset = 0
         while True:
             try:
-                page = self._get(DEMAND_ROUTE, {**params, "offset": offset})
+                page = self._get(route, {**params, "offset": offset})
             except PullBudgetExceeded as exc:
                 exc.pages = pages  # budget spent — don't discard what it bought
                 raise
@@ -158,7 +172,9 @@ class EiaClient:
                 return pages
 
 
-def write_bronze(pages: list[dict], run_id: str, bronze_dir: Path, window: str) -> list[Path]:
+def write_bronze(
+    pages: list[dict], run_id: str, bronze_dir: Path, window: str, dataset: str = "demand"
+) -> list[Path]:
     """Persist verbatim payloads, stamped with fetch time — never the API key.
 
     EIA echoes request params (key included) back inside the payload, so the
@@ -173,7 +189,7 @@ def write_bronze(pages: list[dict], run_id: str, bronze_dir: Path, window: str) 
             doc["request"] = {**doc["request"], "params": {**doc["request"]["params"]}}
             doc["request"]["params"].pop("api_key", None)
         out = {"fetched_at": fetched_at, "window": window, "payload": doc}
-        path = bronze_dir / f"demand_{window}_p{i:03d}_{run_id}.json"
+        path = bronze_dir / f"{dataset}_{window}_p{i:03d}_{run_id}.json"
         path.write_text(json.dumps(out, indent=1), encoding="utf-8", newline="\n")
         written.append(path)
     return written
