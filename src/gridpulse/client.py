@@ -15,8 +15,10 @@ from pathlib import Path
 from typing import Callable
 
 import httpx
+from pydantic import ValidationError
 
 from .config import BASE_URL, DEMAND_ROUTE, PAGE_LENGTH, REGIONS, Settings
+from .schemas.raw import RawResponseMeta
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
@@ -25,10 +27,14 @@ class PullBudgetExceeded(RuntimeError):
     """Raised when a run tries to make more requests than the budget allows.
 
     Carries ``pages``: payloads fetched before the cap hit, so callers can
-    persist partial work instead of re-spending budget on it.
+    persist partial work instead of re-spending budget on it. Instance
+    state, never a class-level default — a shared class list would leak
+    pages across raise sites.
     """
 
-    pages: list[dict] = []
+    def __init__(self, message: str, pages: list[dict] | None = None) -> None:
+        super().__init__(message)
+        self.pages: list[dict] = pages if pages is not None else []
 
 
 class EiaClient:
@@ -48,6 +54,16 @@ class EiaClient:
         self._client = httpx.Client(base_url=BASE_URL, transport=transport, timeout=30.0)
         self._sleep = sleep
         self.requests_made = 0
+
+    def close(self) -> None:
+        """Release the underlying HTTP connection pool."""
+        self._client.close()
+
+    def __enter__(self) -> "EiaClient":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
 
     def _get(self, route: str, params: dict) -> dict:
         """One budgeted, retried GET returning parsed JSON."""
@@ -126,9 +142,19 @@ class EiaClient:
                 exc.pages = pages  # budget spent — don't discard what it bought
                 raise
             pages.append(page)
-            total = int(page["response"]["total"])
-            offset += len(page["response"]["data"])
-            if offset >= total or not page["response"]["data"]:
+            # Pydantic at the boundary applies to the envelope too: a
+            # renamed/missing key must fail with a fix path, not a KeyError.
+            # RawResponseMeta.total coerces the wire's string form.
+            try:
+                meta = RawResponseMeta.model_validate(page.get("response") or {})
+            except ValidationError as exc:
+                raise RuntimeError(
+                    f"EIA response envelope unrecognized at offset {offset} "
+                    f"({exc.error_count()} field errors). Fix: the API shape may "
+                    "have changed — inspect the raw page and update schemas/raw.py."
+                ) from None
+            offset += len(meta.data)
+            if offset >= meta.total or not meta.data:
                 return pages
 
 

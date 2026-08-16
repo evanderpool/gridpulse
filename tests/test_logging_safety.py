@@ -4,20 +4,17 @@ Found live during the first real run: httpx logs full request URLs (key
 included) at INFO level. In GitHub Actions those logs are public.
 """
 
-import json
 import logging
-from pathlib import Path
 
 import httpx
 
+from conftest import good_row, wire_page
 from gridpulse.cli import cmd_ingest, main
 from gridpulse.client import EiaClient
 from gridpulse.config import Settings
 
-FIXTURES = Path(__file__).parent / "fixtures"
 
-
-def test_httpx_logger_is_silenced_by_main(tmp_path, monkeypatch, capsys):
+def test_httpx_logger_is_silenced_by_main(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)  # no .env here → main exits on missing key
     monkeypatch.delenv("EIA_API_KEY", raising=False)
     try:
@@ -28,12 +25,12 @@ def test_httpx_logger_is_silenced_by_main(tmp_path, monkeypatch, capsys):
 
 
 def test_ingest_logs_never_contain_the_key(tmp_path, caplog):
-    payload = json.loads((FIXTURES / "demand_hourly_4regions.json").read_text(encoding="utf-8"))
-    payload["response"]["total"] = len(payload["response"]["data"])
     settings = Settings(api_key="sekrit-key-value", data_dir=tmp_path / "data")
     client = EiaClient(
         settings,
-        transport=httpx.MockTransport(lambda r: httpx.Response(200, json=payload)),
+        transport=httpx.MockTransport(
+            lambda r: httpx.Response(200, json=wire_page([good_row()]))
+        ),
     )
     with caplog.at_level(logging.DEBUG):
         cmd_ingest(settings, "a", "b", client=client)

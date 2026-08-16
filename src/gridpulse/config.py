@@ -56,10 +56,12 @@ class Settings:
 
     @property
     def bronze_dir(self) -> Path:
+        """Where verbatim API payloads land (orphan `data` branch in CI)."""
         return self.data_dir / "bronze"
 
     @property
     def db_path(self) -> Path:
+        """The SQLite database holding silver tables, quarantine, and the ledger."""
         return self.data_dir / "gridpulse.db"
 
     @classmethod

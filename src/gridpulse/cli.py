@@ -2,13 +2,14 @@
 
 Stages are separate commands on purpose: transform never touches the network,
 so any conversion bug is reproducible offline from the exact bronze bytes
-that triggered it.
+that triggered it. Functions here orchestrate only — parsing, conversion,
+and persistence live in their modules.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
+import contextlib
 import logging
 import secrets
 import subprocess
@@ -17,8 +18,15 @@ from datetime import datetime, timezone
 
 from .client import EiaClient, PullBudgetExceeded, write_bronze
 from .config import Settings
-from .convert.pipeline import Reject, convert_demand
-from .storage import connect, record_run, upsert_demand, write_quarantine
+from .convert.pipeline import convert_demand
+from .storage import (
+    RunRow,
+    connect,
+    read_bronze_docs,
+    record_run,
+    upsert_demand,
+    write_quarantine,
+)
 
 log = logging.getLogger("gridpulse")
 
@@ -39,8 +47,16 @@ def _git_sha() -> str:
 
 
 def _log(run_id: str, stage: str, **fields: object) -> None:
-    """One structured line per event, greppable by run_id."""
-    kv = " ".join(f"{k}={v}" for k, v in fields.items())
+    """One structured line per event, greppable by run_id.
+
+    Values containing spaces are quoted so ``key=value`` splitting stays
+    parseable even for free-text notes.
+    """
+    def fmt(v: object) -> str:
+        s = str(v)
+        return f'"{s}"' if " " in s else s
+
+    kv = " ".join(f"{k}={fmt(v)}" for k, v in fields.items())
     log.info("run_id=%s stage=%s %s", run_id, stage, kv)
 
 
@@ -48,63 +64,55 @@ def cmd_ingest(settings: Settings, start: str, end: str, client: EiaClient | Non
     """Fetch a demand window and persist it verbatim to bronze."""
     run_id = _run_id()
     t0 = time.monotonic()
+    own_client = client is None
     client = client or EiaClient(settings)
     window = f"{start}_{end}".replace(":", "")
     try:
-        pages = client.fetch_demand_window(start, end)
-    except PullBudgetExceeded as exc:
-        # Budget spent — persist what it bought before failing, so the
-        # narrowed re-run doesn't pay for these pages again.
-        if exc.pages:
-            write_bronze(exc.pages, run_id, settings.bronze_dir, window + "_partial")
-            _log(run_id, "ingest", note=f"budget hit: {len(exc.pages)} partial pages saved")
-        raise
-    paths = write_bronze(pages, run_id, settings.bronze_dir, window)
-    rows = sum(len(p["response"]["data"]) for p in pages)
-    conn = connect(settings.db_path)
-    record_run(conn, {
-        "run_id": run_id, "stage": "ingest",
-        "started_at": datetime.now(timezone.utc).isoformat(), "git_sha": _git_sha(),
-        "rows_received": rows, "rows_valid": 0, "rows_quarantined": 0,
-        "rows_upserted": 0, "api_calls": client.requests_made,
-        "runtime_seconds": round(time.monotonic() - t0, 3),
-    })
-    _log(run_id, "ingest", pages=len(paths), rows=rows, api_calls=client.requests_made)
-    return 0
+        try:
+            pages = client.fetch_demand_window(start, end)
+        except PullBudgetExceeded as exc:
+            # Budget spent — persist what it bought and ledger the failure,
+            # so the run that exhausted the API budget is attributable.
+            partial_rows = 0
+            if exc.pages:
+                write_bronze(exc.pages, run_id, settings.bronze_dir, window + "_partial")
+                partial_rows = sum(len(p["response"]["data"]) for p in exc.pages)
+                _log(run_id, "ingest", note=f"budget hit: {len(exc.pages)} partial pages saved")
+            with contextlib.closing(connect(settings.db_path)) as conn:
+                record_run(conn, _run_row(
+                    run_id, "ingest_failed", rows_received=partial_rows,
+                    api_calls=client.requests_made, t0=t0,
+                ))
+            raise
+        paths = write_bronze(pages, run_id, settings.bronze_dir, window)
+        rows = sum(len(p["response"]["data"]) for p in pages)
+        with contextlib.closing(connect(settings.db_path)) as conn:
+            record_run(conn, _run_row(
+                run_id, "ingest", rows_received=rows,
+                api_calls=client.requests_made, t0=t0,
+            ))
+        _log(run_id, "ingest", pages=len(paths), rows=rows, api_calls=client.requests_made)
+        return 0
+    finally:
+        if own_client:
+            client.close()
 
 
 def cmd_transform(settings: Settings) -> int:
     """Convert every bronze document into the silver table. Idempotent."""
     run_id = _run_id()
     t0 = time.monotonic()
-    docs: list[dict] = []
-    doc_rejects: list[Reject] = []
-    # Only pipeline-written files; a corrupt or hand-dropped file becomes a
-    # doc-level quarantine entry, never a run abort (review finding LOW-3).
-    for p in sorted(settings.bronze_dir.glob("demand_*.json")):
-        try:
-            doc = json.loads(p.read_text(encoding="utf-8"))
-            doc["fetched_at"], doc["payload"]["response"]["data"]
-        except (json.JSONDecodeError, KeyError, TypeError) as exc:
-            doc_rejects.append(Reject(
-                raw={"bronze_file": p.name},
-                error=f"unreadable bronze document: {exc!r}",
-                fetched_at="",
-            ))
-            continue
-        docs.append(doc)
-    records, rejects = convert_demand(docs)
-    rejects = doc_rejects + rejects
-    conn = connect(settings.db_path)
-    upserted = upsert_demand(conn, records)
-    newly_quarantined = write_quarantine(conn, run_id, rejects)
-    record_run(conn, {
-        "run_id": run_id, "stage": "transform",
-        "started_at": datetime.now(timezone.utc).isoformat(), "git_sha": _git_sha(),
-        "rows_received": len(records) + len(rejects), "rows_valid": len(records),
-        "rows_quarantined": newly_quarantined, "rows_upserted": upserted,
-        "api_calls": 0, "runtime_seconds": round(time.monotonic() - t0, 3),
-    })
+    docs, doc_rejects = read_bronze_docs(settings.bronze_dir)
+    records, row_rejects = convert_demand(docs)
+    rejects = doc_rejects + row_rejects
+    with contextlib.closing(connect(settings.db_path)) as conn:
+        upserted = upsert_demand(conn, records)
+        newly_quarantined = write_quarantine(conn, run_id, rejects)
+        record_run(conn, _run_row(
+            run_id, "transform", rows_received=len(records) + len(rejects),
+            rows_valid=len(records), rows_quarantined=newly_quarantined,
+            rows_upserted=upserted, t0=t0,
+        ))
     _log(run_id, "transform", valid=len(records), quarantined=newly_quarantined,
          upserted=upserted)
     if newly_quarantined:
@@ -113,8 +121,29 @@ def cmd_transform(settings: Settings) -> int:
     return 0
 
 
+def _run_row(
+    run_id: str,
+    stage: str,
+    *,
+    t0: float,
+    rows_received: int = 0,
+    rows_valid: int = 0,
+    rows_quarantined: int = 0,
+    rows_upserted: int = 0,
+    api_calls: int = 0,
+) -> RunRow:
+    """Assemble a complete metrics-ledger row (see storage.RunRow)."""
+    return RunRow(
+        run_id=run_id, stage=stage,
+        started_at=datetime.now(timezone.utc).isoformat(), git_sha=_git_sha(),
+        rows_received=rows_received, rows_valid=rows_valid,
+        rows_quarantined=rows_quarantined, rows_upserted=rows_upserted,
+        api_calls=api_calls, runtime_seconds=round(time.monotonic() - t0, 3),
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Entry point for ``python -m gridpulse``."""
+    """Entry point for ``gridpulse`` / ``python -m gridpulse``."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     # httpx logs full request URLs at INFO — including the api_key query
     # param. In CI those logs are public, so this stays WARNING forever.

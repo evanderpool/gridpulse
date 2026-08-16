@@ -5,9 +5,12 @@ four major grid regions (ERCOT, CAISO, MISO, PJM), pulled from the
 [EIA open-data API v2](https://www.eia.gov/opendata/), tamed by a documented
 deterministic conversion tool, and published as a self-refreshing report.
 
-> **Status: Phase 0 — skeleton.** The EIA source has been validated live for
-> all three questions below (2026-08-15); pipeline code lands in Phase 1.
-> This README is written before the code on purpose: it is the spec.
+> **Status: Phase 1 shipped — the demand vertical slice is live.** Ingest →
+> bronze → validate → convert → SQLite works against the real API, idempotency
+> is proven by test, and the slice has passed two sequential adversarial
+> reviews (logic + code) with every finding fixed and pinned as a regression
+> test. Phase 2 (full conversion suite) is next. This README was written
+> before the code on purpose: it is the spec, and it is kept current.
 
 ## The three questions
 
@@ -46,22 +49,25 @@ flowchart LR
 
 ### Module map
 
+Entries marked with the phase that ships them; unmarked = built.
+
 ```
 src/gridpulse/
-  config.py          settings, API params, canonical units (env-driven)
+  config.py          settings, API params, pull budget (env-driven)
   client.py          EIA calls, retry/backoff, pagination, bronze writes
   schemas/           raw.py + clean.py — Pydantic models
   convert/
-    backends/        base.py (interface) · polars_backend.py · pandas [stretch]
+    backends/        [Phase 2] base.py (interface) · polars · pandas [stretch]
     temporal.py      timestamp parsing, UTC normalization
-    flatten.py       nested JSON → tabular records
-    quality.py       null/outlier policy, quality flags, quarantine
-    dedupe.py        natural-key dedup + survivorship (latest fetch wins)
-    derive.py        renewable share, net load, ramp rate
-    pipeline.py      orchestrates; the one public entry point
-  storage.py         bronze/silver/gold writers, upserts
-  analyze.py         gold aggregates, run-level quality metrics
-  cli.py             ingest · transform · report · backfill
+    flatten.py       [Phase 2] nested JSON → tabular records
+    quality.py       [Phase 2] null/outlier policy, quality flags
+    dedupe.py        [Phase 2] natural-key dedup module (survivorship lives
+                     in storage upserts today)
+    derive.py        [Phase 2] renewable share, net load, ramp rate
+    pipeline.py      the one public conversion entry point
+  storage.py         bronze reader, silver upserts, quarantine, run ledger
+  analyze.py         [Phase 3] gold aggregates
+  cli.py             ingest · transform (report/backfill arrive Phase 3)
 ```
 
 ## Design decisions
@@ -101,8 +107,8 @@ Captured during pre-build validation; each is a named test fixture in
 
 | Phase | Ships | Status |
 |---|---|---|
-| 0 | Repo skeleton, validated source, fixtures, CI | ✅ this commit |
-| 1 | Vertical slice: ingest → bronze → validate → convert → SQLite, idempotency proven by test | next |
+| 0 | Repo skeleton, validated source, fixtures, CI | ✅ 2026-08-15 |
+| 1 | Vertical slice: ingest → bronze → validate → convert → SQLite, idempotency proven by test; two adversarial review passes applied + pinned | ✅ 2026-08-15 |
 | 2 | Full conversion suite, quarantine, metrics ledger | |
 | 3 | Gold marts, HTML report, Actions cron, Pages — **MVP ship** | |
 | 4+ | Stretch, strictly in order: Streamlit dashboard → quality panel → pandas backend → weather join → AI notes → suggestion engine | |
@@ -111,12 +117,13 @@ Captured during pre-build validation; each is a named test fixture in
 
 ```
 pip install -e .[dev]
-pytest
+pytest                                        # fully offline — 40+ tests
+gridpulse ingest --start 2026-08-14T00 --end 2026-08-15T00
+gridpulse transform                           # idempotent; re-run freely
 ```
 
-Pipeline commands arrive in Phase 1. An EIA API key (free) goes in `.env`
-(gitignored) as `EIA_API_KEY=...` — never in the repo, and a GitHub Actions
-secret in CI.
+An EIA API key (free) goes in `.env` (gitignored) as `EIA_API_KEY=...` —
+never in the repo, and a GitHub Actions secret in CI.
 
 ## License
 
