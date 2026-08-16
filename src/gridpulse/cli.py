@@ -86,6 +86,10 @@ def auto_window(settings: Settings) -> tuple[str, str]:
     now = datetime.now(timezone.utc)
     if latest:
         start_dt = datetime.fromisoformat(latest) - timedelta(hours=REVISION_OVERLAP_HOURS)
+        # Clamp: one future-dated row (a bad period EIA served that still
+        # matched the format) must not invert the window and silently stall
+        # every future ingest (P3 review).
+        start_dt = min(start_dt, now - timedelta(hours=REVISION_OVERLAP_HOURS))
     else:
         start_dt = now - timedelta(days=FIRST_RUN_DAYS)
     return start_dt.strftime(HOUR_FMT), now.strftime(HOUR_FMT)

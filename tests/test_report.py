@@ -103,3 +103,16 @@ def test_offline_commands_run_without_the_key(tmp_path, monkeypatch):
     assert main(["transform"]) == 0
     assert main(["derive"]) == 0
     assert main(["report", "--out", "s/index.html"]) == 0
+
+
+def test_auto_window_clamps_future_dated_junk(tmp_path):
+    # A single future-dated row must not invert the window (start > end)
+    # and permanently stall ingestion (P3 review finding).
+    settings = Settings(api_key="k", data_dir=tmp_path / "data")
+    conn = connect(settings.db_path)
+    d, _ = convert_demand([bronze_rows([good_row(period="2030-01-01T00")])])
+    upsert_demand(conn, d)
+    conn.close()
+    start, end = auto_window(settings)
+    fmt = "%Y-%m-%dT%H"
+    assert datetime.strptime(start, fmt) < datetime.strptime(end, fmt)
