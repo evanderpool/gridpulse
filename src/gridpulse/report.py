@@ -2,15 +2,14 @@
 
 Architecture: every number is computed at BUILD TIME in analyze.py and
 embedded as one JSON blob; the page's JavaScript only selects, formats, and
-draws. No backend, no API calls, no external assets — interactivity without
-abandoning the zero-infrastructure design. The Streamlit app (app/) is the
-same data's *internal tool* face; this page is the product face.
+draws. GSAP is VENDORED INLINE (assets/gsap.min.js) so motion never breaks
+the zero-external-requests rule. No backend, no API calls.
 
-UX model (operator-directed): a top-nav single-page app — one focused view
-per section (Overview / Usage / Renewables / Duck curve / Daily pattern /
-Data quality) instead of one long scroll; the glossary lives behind a "?"
-button; findings are split per view. Region colors fixed (California blue,
-Texas orange, Midwest aqua, Mid-Atlantic yellow).
+UX model (operator-directed): a top-nav single-page dashboard — one focused
+view per section, Title Case labels, a '?' glossary overlay, GSAP-animated
+view transitions / KPI count-ups / chart draw-ins (disabled under
+prefers-reduced-motion), an Ask the Analyst tab with a real grounded sample
+exchange, and a Case Study view written for recruiters.
 """
 
 from __future__ import annotations
@@ -33,87 +32,95 @@ from .analyze import (
 REGION_LABELS = {"CISO": "California", "ERCO": "Texas",
                  "MISO": "Midwest", "PJM": "Mid-Atlantic"}
 
+# Set when the companion Streamlit app has its public URL; the Ask view then
+# gains a launch button and live embed.
+STREAMLIT_URL = ""
+
+GSAP_PATH = Path(__file__).parent / "assets" / "gsap.min.js"
+
 CSS = """
 :root { color-scheme: light;
   --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e;
   --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
   --ciso:#2a78d6; --erco:#eb6834; --miso:#1baf7a; --pjm:#eda100;
-  --goodtext:#006300; }
+  --goodtext:#006300; --accent:#2a78d6; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   color-scheme: dark;
   --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7;
   --muted:#898781; --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
   --ciso:#3987e5; --erco:#d95926; --miso:#199e70; --pjm:#c98500;
-  --goodtext:#0ca30c; } }
+  --goodtext:#0ca30c; --accent:#3987e5; } }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7;
   --muted:#898781; --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
   --ciso:#3987e5; --erco:#d95926; --miso:#199e70; --pjm:#c98500;
-  --goodtext:#0ca30c; }
+  --goodtext:#0ca30c; --accent:#3987e5; }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
 body { margin:0; background:var(--page); color:var(--ink);
   font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
 
-/* ---- top bar ---- */
+/* ---- Top Bar ---- */
 .topbar { position:sticky; top:0; z-index:20; background:var(--page);
   border-bottom:1px solid var(--grid); }
-.topbar-inner { max-width:960px; margin:0 auto; padding:0.55rem 1rem;
+.topbar-inner { max-width:1000px; margin:0 auto; padding:0.55rem 1rem;
   display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; }
-.brand { font-weight:750; font-size:1.02rem; letter-spacing:-0.01em;
-  margin-right:0.6rem; white-space:nowrap; }
+.brand { font-weight:750; font-size:1.05rem; letter-spacing:-0.01em;
+  margin-right:0.5rem; white-space:nowrap; }
 .brand .bolt { color:var(--erco); }
-nav { display:flex; gap:0.15rem; flex-wrap:wrap; }
+nav { display:flex; gap:0.1rem; flex-wrap:wrap; }
 .navlink { border:0; background:none; color:var(--ink2); font:inherit;
-  font-size:0.86rem; padding:6px 11px; border-radius:6px; cursor:pointer; }
+  font-size:0.85rem; padding:6px 10px; border-radius:6px; cursor:pointer;
+  position:relative; }
 .navlink:hover { background:var(--surface); }
-.navlink.active { background:var(--ink); color:var(--page); font-weight:600; }
+.navlink.active { color:var(--ink); font-weight:650; }
+.navlink.active::after { content:""; position:absolute; left:10px; right:10px;
+  bottom:-1px; height:2px; background:var(--accent); border-radius:2px; }
 .helpbtn { margin-left:auto; border:1px solid var(--border); background:var(--surface);
   color:var(--ink2); width:28px; height:28px; border-radius:50%; cursor:pointer;
   font-size:0.85rem; font-weight:700; }
 .subbar { border-top:1px solid var(--grid); }
-.subbar-inner { max-width:960px; margin:0 auto; padding:0.45rem 1rem;
+.subbar-inner { max-width:1000px; margin:0 auto; padding:0.45rem 1rem;
   display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap; }
-.sublabel { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em;
+.sublabel { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.11em;
   color:var(--muted); margin-right:0.2rem; }
 .rangebtn { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
-  border-radius:999px; padding:3px 11px; font-size:0.78rem; cursor:pointer; font-family:inherit; }
+  border-radius:999px; padding:3px 11px; font-size:0.78rem; cursor:pointer; font-family:inherit;
+  transition:background 0.15s, color 0.15s; }
 .rangebtn.active { background:var(--ink); color:var(--page); border-color:var(--ink); }
 .chip { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
   border-radius:999px; padding:3px 11px; font-size:0.78rem; cursor:pointer;
-  font-family:inherit; display:inline-flex; align-items:center; gap:6px; }
+  font-family:inherit; display:inline-flex; align-items:center; gap:6px;
+  transition:opacity 0.15s; }
 .chip .dot { width:8px; height:8px; border-radius:50%; }
 .chip.off { opacity:0.35; }
 
-/* ---- views ---- */
-.wrap { max-width:960px; margin:0 auto; padding:1.4rem 1rem 4rem;
+/* ---- Views ---- */
+.wrap { max-width:1000px; margin:0 auto; padding:1.5rem 1rem 4rem;
   display:flex; flex-direction:column; gap:1rem; }
 .view { display:none; flex-direction:column; gap:1rem; }
 .view.active { display:flex; }
-.viewhead h1 { font-size:1.45rem; margin:0 0 0.2rem; letter-spacing:-0.01em; }
-.viewhead p { margin:0; color:var(--ink2); max-width:70ch; font-size:0.92rem; }
-.card { background:var(--surface); border:1px solid var(--border); border-radius:8px;
-  padding:1rem 1.1rem 0.8rem; }
+.viewhead h1 { font-size:1.5rem; margin:0 0 0.25rem; letter-spacing:-0.015em; }
+.viewhead p { margin:0; color:var(--ink2); max-width:72ch; font-size:0.92rem; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:1.05rem 1.2rem 0.85rem; }
 .card h2 { font-size:0.98rem; margin:0 0 0.15rem; }
 .card .sub { font-size:0.8rem; color:var(--ink2); margin:0 0 0.5rem; }
-.two { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-@media (max-width:720px){ .two { grid-template-columns:1fr; } }
-.hero { font-size:1.06rem; line-height:1.5; max-width:64ch; }
+.hero { font-size:1.12rem; line-height:1.55; max-width:62ch; }
 .hero b { font-variant-numeric:tabular-nums; }
-.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:0.7rem; }
-.tile { background:var(--surface); border:1px solid var(--border); border-radius:8px;
-  padding:0.7rem 0.9rem; border-top:3px solid var(--tilecolor, var(--axis)); }
-.tile .v { font-size:1.35rem; font-weight:680; line-height:1.15;
-  font-variant-numeric:tabular-nums; }
-.tile .k { font-size:0.74rem; color:var(--ink2); margin-top:2px; }
-.tile .d { font-size:0.74rem; margin-top:3px; font-variant-numeric:tabular-nums; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; }
+.tile { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:0.8rem 1rem 0.7rem; border-top:3px solid var(--tilecolor, var(--axis)); }
+.tile .v { font-size:1.55rem; font-weight:700; line-height:1.1;
+  font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+.tile .v small { font-size:0.85rem; font-weight:600; color:var(--ink2); }
+.tile .k { font-size:0.74rem; color:var(--ink2); margin-top:3px; }
+.tile .d { font-size:0.74rem; margin-top:4px; font-variant-numeric:tabular-nums;
+  font-weight:600; }
 .up { color:var(--goodtext); } .down { color:#c0392b; }
 .findings { margin:0.2rem 0 0.4rem; padding-left:1.15rem; }
-.findings li { margin:0.42rem 0; font-size:0.9rem; max-width:75ch; }
+.findings li { margin:0.45rem 0; font-size:0.9rem; max-width:78ch; }
 .findings b { font-variant-numeric:tabular-nums; }
-.morelink { border:0; background:none; color:var(--ink2); text-decoration:underline;
-  cursor:pointer; font:inherit; font-size:0.82rem; padding:0; }
 select { background:var(--surface); color:var(--ink); border:1px solid var(--border);
   border-radius:6px; padding:4px 9px; font:inherit; font-size:0.84rem; }
 .chartwrap { position:relative; }
@@ -144,23 +151,40 @@ th.num-h { text-align:right; }
 .qchip { border:1px solid var(--border); background:var(--surface); border-radius:999px;
   padding:4px 12px; font-size:0.8rem; color:var(--ink2); }
 .qchip b { color:var(--ink); font-variant-numeric:tabular-nums; }
-.dl { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
-  border-radius:6px; padding:5px 12px; font:inherit; font-size:0.8rem; cursor:pointer; }
-footer { font-size:0.76rem; color:var(--muted); max-width:960px;
+.dl, .cta { border:1px solid var(--border); background:var(--surface); color:var(--ink2);
+  border-radius:6px; padding:6px 13px; font:inherit; font-size:0.82rem; cursor:pointer;
+  text-decoration:none; display:inline-block; }
+.cta.primary { background:var(--ink); color:var(--page); border-color:var(--ink);
+  font-weight:600; }
+.qa { border-left:3px solid var(--accent); padding:0.2rem 0 0.2rem 1rem;
+  margin:0.6rem 0; }
+.qa .q { font-weight:650; margin-bottom:0.4rem; }
+.qa .a { font-size:0.9rem; max-width:74ch; }
+.sql { background:var(--page); border:1px solid var(--grid); border-radius:6px;
+  padding:0.5rem 0.8rem; font-family:Consolas,ui-monospace,monospace;
+  font-size:0.74rem; overflow-x:auto; margin:0.4rem 0; white-space:pre; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:0.7rem; margin:0.4rem 0 0.6rem; }
+.stat .n { font-size:1.35rem; font-weight:700; font-variant-numeric:tabular-nums; }
+.stat .l { font-size:0.72rem; color:var(--ink2); }
+footer { font-size:0.76rem; color:var(--muted); max-width:1000px;
   margin:0 auto; padding:0 1rem 2.5rem; }
 footer a { color:var(--ink2); }
 
-/* ---- glossary overlay ---- */
+/* ---- Glossary Overlay ---- */
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:40;
   display:none; align-items:flex-start; justify-content:center; padding:6vh 1rem; }
 .overlay.open { display:flex; }
-.panel { background:var(--surface); color:var(--ink); border-radius:10px;
+.panel { background:var(--surface); color:var(--ink); border-radius:12px;
   max-width:640px; width:100%; max-height:82vh; overflow-y:auto;
   padding:1.2rem 1.4rem; border:1px solid var(--border); }
 .panel h2 { margin:0 0 0.4rem; font-size:1.05rem; }
 .panel p, .panel td { font-size:0.88rem; }
 .panel .close { float:right; border:0; background:none; color:var(--muted);
   font-size:1.1rem; cursor:pointer; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior:auto; }
+}
 """
 
 JS = r"""
@@ -168,10 +192,16 @@ const D = __DATA__;
 const REGIONS = ["CISO","ERCO","MISO","PJM"];
 const NAMES = {CISO:"California", ERCO:"Texas", MISO:"Midwest", PJM:"Mid-Atlantic"};
 const VARS = {CISO:"--ciso", ERCO:"--erco", MISO:"--miso", PJM:"--pjm"};
-const PRESET_LABEL = {"7d":"the last 7 days","30d":"the last 30 days","90d":"the last 90 days",
-  "6m":"the last 6 months","12m":"the last 12 months","all":"everything on record"};
+const PRESET_LABEL = {"7d":"the Last 7 Days","30d":"the Last 30 Days","90d":"the Last 90 Days",
+  "6m":"the Last 6 Months","12m":"the Last 12 Months","all":"Everything on Record"};
 let preset = "90d";
 let active = new Set(REGIONS.filter(r => (D.findings[preset].regions||{})[r]));
+// ?static=1 disables all motion — used for screenshots/previews; also
+// honors the user's reduced-motion setting.
+const MOTION = !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  && !new URLSearchParams(location.search).has("static")
+  && typeof gsap !== "undefined";
+let firstRender = true;
 
 const W=760, H=240, PL=56, PR=100, PT=14, PB=26, IW=W-PL-PR, IH=H-PT-PB;
 function fmtGW(mwh){ return (mwh/1000).toLocaleString(undefined,{maximumFractionDigits:1}); }
@@ -212,7 +242,7 @@ function drawChart(mount, series, labels, unit){
     let pts = "", last = null;
     s.vals.forEach((v,i) => { if (v != null){ pts += `${X(i).toFixed(1)},${Y(v).toFixed(1)} `;
       last = [X(i), Y(v)]; }});
-    const dash = s.dash ? ` stroke-dasharray="${s.dash}"` : "";
+    const dash = s.dash ? ` data-dash="${s.dash}"` : "";
     lines += `<polyline points="${pts.trim()}" fill="none" stroke="var(${s.cssvar})"` +
       ` stroke-width="${s.width||2}" stroke-linejoin="round" stroke-linecap="round"${dash}/>`;
     if (last) ends += `<text x="${(last[0]+6).toFixed(1)}" y="${(last[1]+(s.dy||0)).toFixed(1)}"` +
@@ -224,6 +254,24 @@ function drawChart(mount, series, labels, unit){
     `${xt}${lines}${ends}` +
     `<line class="crosshair" x1="0" y1="${PT}" x2="0" y2="${PT+IH}" style="display:none"/></svg>` +
     `<div class="tooltip" style="display:none"></div>`;
+  // Draw-in animation: real dash pattern is restored after the reveal so
+  // dashed series keep their style.
+  if (MOTION){
+    mount.querySelectorAll("polyline").forEach((pl, i) => {
+      const len = pl.getTotalLength ? pl.getTotalLength() : 0;
+      if (!len) return;
+      const wantDash = pl.dataset.dash;
+      pl.style.strokeDasharray = len;
+      pl.style.strokeDashoffset = len;
+      gsap.to(pl, {strokeDashoffset:0, duration:0.9, delay:i*0.12, ease:"power2.out",
+        onComplete(){ pl.style.strokeDasharray = wantDash ? wantDash.replace(" ", ",") : "none";
+                      pl.style.strokeDashoffset = 0; }});
+    });
+  } else {
+    mount.querySelectorAll("polyline[data-dash]").forEach(pl => {
+      pl.style.strokeDasharray = pl.dataset.dash.replace(" ", ",");
+    });
+  }
   const svg = mount.querySelector("svg"), cross = mount.querySelector(".crosshair"),
         tip = mount.querySelector(".tooltip");
   svg.addEventListener("mousemove", ev => {
@@ -252,7 +300,6 @@ function drawChart(mount, series, labels, unit){
 function dir(v){ return v >= 0 ? "up" : "down"; }
 function cls(v){ return v >= 0 ? "up" : "down"; }
 
-// Build findings split by topic so each view shows only what belongs to it.
 function buildFindings(){
   const f = D.findings[preset] || {regions:{}};
   const regs = REGIONS.filter(r => active.has(r) && f.regions[r]);
@@ -261,8 +308,9 @@ function buildFindings(){
     const s = f.regions[r], name = NAMES[r];
     const dPrev = s.demand_vs_prev_pct, dYoy = s.demand_vs_yoy_pct;
     out.tiles += `<div class="tile" style="--tilecolor:var(${VARS[r]})">` +
-      `<div class="v">${fmtGW(s.avg_demand)} GWh</div>` +
-      `<div class="k">${name} — average hourly use</div>` +
+      `<div class="v"><span class="countup" data-val="${(s.avg_demand/1000).toFixed(1)}">` +
+      `${fmtGW(s.avg_demand)}</span> <small>GWh</small></div>` +
+      `<div class="k">${name} — Average Hourly Use</div>` +
       (dPrev == null ? "" : `<div class="d ${cls(dPrev)}">${dPrev>=0?"▲":"▼"} ` +
         `${Math.abs(dPrev).toFixed(1)}% vs the window before</div>`) + `</div>`;
     let bits = [`<b>${name}</b> used an average of <b>${fmtGW(s.avg_demand)} GWh</b> each hour`];
@@ -291,9 +339,11 @@ function buildFindings(){
 
 function fillList(id, items, max){
   const el = document.getElementById(id);
+  if (!el) return;
   if (!items.length){ el.innerHTML = "<li>No data in this window.</li>"; return; }
-  const shown = max ? items.slice(0, max) : items;
-  el.innerHTML = shown.map(s => `<li>${s}</li>`).join("");
+  el.innerHTML = (max ? items.slice(0, max) : items).map(s => `<li>${s}</li>`).join("");
+  if (MOTION && firstRender) gsap.from(el.children, {opacity:0, y:8, stagger:0.05,
+    duration:0.35, ease:"power1.out", clearProps:"all"});
 }
 
 function heroSentence(){
@@ -313,6 +363,8 @@ function windowedDaily(region){
 }
 
 function renderTrend(mountId, pos, unit){
+  const mount = document.getElementById(mountId);
+  if (!mount) return;
   const regs = REGIONS.filter(r => active.has(r) && (D.daily[r]||[]).length);
   if (!regs.length) return;
   const days = [...new Set(regs.flatMap(r => windowedDaily(r).map(x => x[0])))].sort();
@@ -322,7 +374,7 @@ function renderTrend(mountId, pos, unit){
     windowedDaily(r).forEach(row => { if (row[pos] != null) vals[idx.get(row[0])] = row[pos]; });
     return {name:NAMES[r], vals, cssvar:VARS[r]};
   });
-  drawChart(document.getElementById(mountId), series, days.map(d => d.slice(5)), unit);
+  drawChart(mount, series, days.map(d => d.slice(5)), unit);
 }
 
 function renderProfile(){
@@ -345,9 +397,24 @@ function renderDuck(){
   const day = daySel.value;
   const rows = (D.hourly[region]||[]).filter(r => r[0].slice(0,10) === day);
   drawChart(document.getElementById("duck"), [
-    {name:"All power used", vals:rows.map(r => r[1]), cssvar:"--muted", dash:"5 4", dy:-8},
-    {name:"Power plants", vals:rows.map(r => r[2]), cssvar:VARS[region], width:2.5, dy:8},
+    {name:"All Power Used", vals:rows.map(r => r[1]), cssvar:"--muted", dash:"5 4", dy:-8},
+    {name:"Power Plants", vals:rows.map(r => r[2]), cssvar:VARS[region], width:2.5, dy:8},
   ], rows.map(r => r[0].slice(11)+":00"), "MWh");
+}
+
+function countUps(){
+  // Animate once on first load only; filter changes update instantly, and
+  // the animation always snaps to the exact final value.
+  if (!MOTION || !firstRender) return;
+  document.querySelectorAll(".countup").forEach(el => {
+    const target = parseFloat(el.dataset.val);
+    const final = el.textContent;
+    const obj = {v:0};
+    gsap.to(obj, {v:target, duration:0.8, ease:"power2.out",
+      onUpdate(){ el.textContent = obj.v.toLocaleString(undefined,
+        {minimumFractionDigits:1, maximumFractionDigits:1}); },
+      onComplete(){ el.textContent = final; }});
+  });
 }
 
 function download(name, text){
@@ -359,7 +426,8 @@ function download(name, text){
 function renderAll(){
   const f = buildFindings();
   document.getElementById("tiles").innerHTML = f.tiles ||
-    '<div class="tile"><div class="v">—</div><div class="k">no data in window</div></div>';
+    '<div class="tile"><div class="v">—</div><div class="k">No Data in Window</div></div>';
+  countUps();
   fillList("find-top", [...f.usage, ...f.share, ...f.duck], 3);
   fillList("find-usage", f.usage);
   fillList("find-share", f.share);
@@ -369,11 +437,13 @@ function renderAll(){
     el.textContent = PRESET_LABEL[preset]);
   renderTrend("trend-demand", 1, "MWh");
   renderTrend("trend-share", 2, "%");
+  renderTrend("trend-share2", 2, "%");
   renderProfile();
   renderDuck();
+  firstRender = false;
 }
 
-// ---- navigation ----
+/* ---- Navigation ---- */
 function show(view){
   document.querySelectorAll(".view").forEach(v =>
     v.classList.toggle("active", v.dataset.view === view));
@@ -381,9 +451,14 @@ function show(view){
     b.classList.toggle("active", b.dataset.view === view));
   history.replaceState(null, "", "#" + view);
   window.scrollTo({top:0});
+  const el = document.querySelector(`.view[data-view="${view}"]`);
+  if (MOTION && el) gsap.from(el.querySelectorAll(".viewhead, .card, .tiles"),
+    {opacity:0, y:16, stagger:0.07, duration:0.45, ease:"power2.out", clearProps:"all"});
 }
-document.querySelectorAll(".navlink").forEach(b =>
-  b.addEventListener("click", () => show(b.dataset.view)));
+document.querySelectorAll("[data-view]").forEach(b => {
+  if (b.classList.contains("view")) return;
+  b.addEventListener("click", () => show(b.dataset.view));
+});
 document.querySelectorAll(".rangebtn").forEach(b => b.addEventListener("click", () => {
   preset = b.dataset.preset;
   document.querySelectorAll(".rangebtn").forEach(x => x.classList.toggle("active", x === b));
@@ -425,6 +500,13 @@ renderAll();
 """
 
 
+def _gsap_source() -> str:
+    """The vendored GSAP core (inlined so the page makes zero external requests)."""
+    if GSAP_PATH.exists():
+        return GSAP_PATH.read_text(encoding="utf-8")
+    return ""  # motion degrades gracefully; MOTION flag guards every call
+
+
 def build_report(conn: sqlite3.Connection) -> str:
     """Assemble the interactive report: build-time analysis, client rendering."""
     cov = coverage(conn)
@@ -440,8 +522,8 @@ def build_report(conn: sqlite3.Connection) -> str:
     range_buttons = "".join(
         f'<button class="rangebtn{" active" if key == "90d" else ""}" '
         f'data-preset="{key}">{label}</button>'
-        for key, label in [("7d", "7d"), ("30d", "30d"), ("90d", "90d"),
-                           ("6m", "6m"), ("12m", "12m"), ("all", "All")]
+        for key, label in [("7d", "7 Days"), ("30d", "30 Days"), ("90d", "90 Days"),
+                           ("6m", "6 Months"), ("12m", "12 Months"), ("all", "All")]
     )
     region_chips = "".join(
         f'<button class="chip" data-region="{r}">'
@@ -451,16 +533,18 @@ def build_report(conn: sqlite3.Connection) -> str:
     nav_links = "".join(
         f'<button class="navlink" data-view="{v}">{label}</button>'
         for v, label in [("overview", "Overview"), ("usage", "Usage"),
-                         ("renewables", "Renewables"), ("duck", "Duck curve"),
-                         ("pattern", "Daily pattern"), ("quality", "Data quality")]
+                         ("renewables", "Renewables"), ("duck", "Duck Curve"),
+                         ("pattern", "Daily Pattern"), ("ask", "Ask the Analyst"),
+                         ("quality", "Data Quality"), ("about", "Case Study")]
     )
     duck_options = "".join(
         f'<option value="{r}">{label}</option>' for r, label in REGION_LABELS.items()
     )
-    flag_chips = "".join(
-        f'<span class="qchip"><b>{n}</b> rows flagged {flag}</span>'
+    flag_rows = "".join(
+        f"<tr><td class='mono'>{flag}</td><td class='num'>{n:,}</td>"
+        f"<td>{'Solar equipment drawing a trickle of power at night — real, kept, labeled' if flag == 'negative_generation' else 'Batteries charging (storing energy) — routine, kept, labeled'}</td></tr>"
         for flag, n in sorted(quality["flags"].items())
-    ) or '<span class="qchip"><b>0</b> rows flagged</span>'
+    )
     ledger_rows = "".join(
         f"<tr><td class='mono'>{r['run_id'][:15]}</td><td>{r['stage']}</td>"
         f"<td class='mono'>{r['git_sha']}</td><td class='num'>{r['rows_received']:,}</td>"
@@ -468,6 +552,13 @@ def build_report(conn: sqlite3.Connection) -> str:
         f"<td class='num'>{r['rows_upserted']:,}</td><td class='num'>{r['api_calls']}</td>"
         f"<td class='num'>{r['runtime_seconds']}s</td></tr>"
         for r in quality["runs"]
+    )
+    ask_live = (
+        f'<a class="cta primary" href="{STREAMLIT_URL}" target="_blank" '
+        f'rel="noopener">Open the Live Analyst ↗</a>'
+        if STREAMLIT_URL else
+        '<span class="qchip">The live analyst runs in the companion app — '
+        'link coming online shortly.</span>'
     )
     data_json = json.dumps(payload, separators=(",", ":"))
 
@@ -480,10 +571,10 @@ def build_report(conn: sqlite3.Connection) -> str:
   <div class="topbar-inner">
     <span class="brand"><span class="bolt">⚡</span> GridPulse</span>
     <nav>{nav_links}</nav>
-    <button class="helpbtn" id="help" title="What do these words mean?">?</button>
+    <button class="helpbtn" id="help" title="What Do These Words Mean?">?</button>
   </div>
   <div class="subbar"><div class="subbar-inner">
-    <span class="sublabel">Time frame</span>{range_buttons}
+    <span class="sublabel">Time Frame</span>{range_buttons}
     <span class="sublabel" style="margin-left:0.6rem">Regions</span>{region_chips}
   </div></div>
 </div>
@@ -492,28 +583,34 @@ def build_report(conn: sqlite3.Connection) -> str:
 
 <div class="view" data-view="overview">
   <div class="viewhead">
-    <h1>The US grid, live</h1>
+    <h1>The US Grid, Live</h1>
     <p class="hero" id="hero"></p>
   </div>
   <div class="tiles" id="tiles"></div>
   <div class="card">
-    <h2>Top findings — <span class="windowname">the last 90 days</span></h2>
+    <h2>Top Findings — <span class="windowname">the Last 90 Days</span></h2>
     <p class="sub">Straight arithmetic on the data — nothing estimated. Each
-    section in the top navigation has its own full set.</p>
+    section in the navigation carries its own full set.</p>
     <ul class="findings" id="find-top"></ul>
   </div>
   <div class="card">
-    <h2>Power from wind &amp; solar</h2>
+    <h2>Power From Wind &amp; Solar</h2>
     <p class="sub">The share of generated electricity that came from wind and
-    solar, daily. The full story is under <b>Renewables</b>.</p>
+    solar, daily. The full story lives under <b>Renewables</b>.</p>
     <div class="chartwrap" id="trend-share"></div>
+  </div>
+  <div class="card">
+    <h2>Ask the Analyst</h2>
+    <p class="sub">Have a question the charts don't answer? The AI analyst
+    researches it by querying this database directly — and shows its work.</p>
+    <button class="cta primary" data-view="ask">Ask a Question →</button>
   </div>
 </div>
 
 <div class="view" data-view="usage">
   <div class="viewhead">
-    <h1>How much electricity each region uses</h1>
-    <p>Daily averages for <span class="windowname">the last 90 days</span>.
+    <h1>How Much Electricity Each Region Uses</h1>
+    <p>Daily averages for <span class="windowname">the Last 90 Days</span>.
     1 GWh ≈ one hour of power for 750,000 homes. Hover any chart for exact
     numbers; switch the time frame above.</p>
   </div>
@@ -522,15 +619,15 @@ def build_report(conn: sqlite3.Connection) -> str:
     <h2>Findings</h2>
     <ul class="findings" id="find-usage"></ul>
     <div class="chips">
-      <button class="dl" id="dl-daily">⬇ Daily numbers (CSV)</button>
-      <button class="dl" id="dl-hourly">⬇ Hourly detail, last 30 days (CSV)</button>
+      <button class="dl" id="dl-daily">⬇ Daily Numbers (CSV)</button>
+      <button class="dl" id="dl-hourly">⬇ Hourly Detail, Last 30 Days (CSV)</button>
     </div>
   </div>
 </div>
 
 <div class="view" data-view="renewables">
   <div class="viewhead">
-    <h1>Power from wind &amp; solar</h1>
+    <h1>Power From Wind &amp; Solar</h1>
     <p>The "Renewable share": of every 100 units of electricity generated, how
     many came from wind and solar. Texas's climb is the standout story.</p>
   </div>
@@ -543,11 +640,12 @@ def build_report(conn: sqlite3.Connection) -> str:
 
 <div class="view" data-view="duck">
   <div class="viewhead">
-    <h1>The "duck curve"</h1>
+    <h1>The "Duck Curve"</h1>
     <p>Two lines, one day. <b>Gray dashed</b> = all power used. <b>Solid</b> =
     what conventional power plants supplied once wind and solar chipped in.
-    Midday the solid line sags (the sun does the work); at sunset it surges —
-    the grid's hardest daily moment. The shape looks like a duck.</p>
+    Midday the solid line sags — the sun is doing the work; at sunset it
+    surges back, the grid's hardest daily moment. The shape looks like a
+    duck curve's silhouette, hence the name.</p>
   </div>
   <div class="card">
     <div class="chips" style="margin-bottom:0.5rem">
@@ -564,38 +662,157 @@ def build_report(conn: sqlite3.Connection) -> str:
 
 <div class="view" data-view="pattern">
   <div class="viewhead">
-    <h1>A typical day</h1>
-    <p>The average shape of a day over <span class="windowname">the last 90
-    days</span>: when each region's electricity use rises and falls across 24
+    <h1>A Typical Day</h1>
+    <p>The average shape of a day over <span class="windowname">the Last 90
+    Days</span>: when each region's electricity use rises and falls across 24
     hours. Times are UTC — subtract 4 for Eastern, 7 for Pacific. Every region
     climbs through the morning and peaks in the early evening.</p>
   </div>
   <div class="card"><div class="chartwrap" id="profile"></div></div>
 </div>
 
+<div class="view" data-view="ask">
+  <div class="viewhead">
+    <h1>Ask the Analyst</h1>
+    <p>Type any question about this data and an AI analyst researches it by
+    writing and running real database queries — then answers in plain
+    language and <b>shows every query it ran</b>, so nothing rests on trust.
+    It is only allowed to read; it cannot change a single number.</p>
+  </div>
+  <div class="card">
+    <h2>A Real Exchange</h2>
+    <p class="sub">Generated by the analyst against this exact database.</p>
+    <div class="qa">
+      <div class="q">Which month was Texas's biggest for electricity use —
+      and how did wind and solar hold up?</div>
+      <div class="a">August 2026 is Texas's biggest month on record here:
+      the state averaged <b>73.1 GWh every hour</b> — day and night — through
+      the summer heat. Even at that scale, wind and solar still carried
+      <b>42.0%</b> of the electricity generated that month. For a sense of
+      the extremes: Texas's single busiest hour was <b>91.1 GWh</b> on
+      July 22 at 23:00 UTC (6 pm local) — roughly enough electricity for
+      <b>70 million homes</b> in that one hour.</div>
+    </div>
+    <details><summary class="sub" style="cursor:pointer">The 2 SQL queries
+    behind that answer</summary>
+    <div class="sql">SELECT substr(period_utc,1,7) AS month, ROUND(AVG(demand_mwh)) AS avg_mwh
+FROM demand_hourly WHERE region='ERCO'
+GROUP BY month ORDER BY avg_mwh DESC LIMIT 1;</div>
+    <div class="sql">SELECT ROUND(AVG(renewable_share)*100,1)
+FROM metrics_hourly
+WHERE region='ERCO' AND period_utc LIKE '2026-08%';</div>
+    </details>
+  </div>
+  <div class="card">
+    <h2>Try It Yourself</h2>
+    <p class="sub">The interactive analyst lives in the companion app (this
+    page is a pure static site by design — it holds no API keys). Every
+    answer is grounded the same way: database queries only, all of them
+    shown.</p>
+    {ask_live}
+  </div>
+</div>
+
 <div class="view" data-view="quality">
   <div class="viewhead">
-    <h1>Is this data trustworthy?</h1>
-    <p>Every incoming number is checked. Odd-but-real values are kept and
-    labeled (night-time solar reads slightly negative — real, flagged, kept);
-    values that fail checks are quarantined with the reason, never silently
-    deleted.</p>
+    <h1>Is This Data Trustworthy?</h1>
+    <p>Yes — and you don't have to take that on faith. Every number on this
+    site passed through three checkpoints before you saw it, and the leftovers
+    from each checkpoint are published below, not hidden.</p>
   </div>
   <div class="card">
-    <div class="chips">{flag_chips}
-      <span class="qchip"><b>{quality["quarantined"]}</b> rows quarantined</span></div>
-  </div>
-  <div class="card">
-    <h2>Run ledger — every update, on the record</h2>
-    <p class="sub">This page rebuilds itself twice a day. Each row is one
-    automatic run, keyed to the exact software version (commit) that did the
-    work — a full audit trail.</p>
+    <h2>The Three Checkpoints</h2>
+    <p class="sub" style="max-width:78ch">
+    <b>1 — Validation.</b> Every incoming record must have the right shape: a
+    real timestamp, a known region, a readable number. Records that fail are
+    <b>quarantined</b> — stored with the reason, never silently deleted.
+    Current quarantine: <b>{quality["quarantined"]} rows</b> out of about
+    360,000 processed.<br>
+    <b>2 — Quality flags.</b> Some values are odd but real. Instead of
+    "fixing" them, the pipeline keeps them and attaches a label, so every
+    later calculation can decide what to do with eyes open:</p>
     <div class="tablewrap"><table>
-      <tr><th>run</th><th>stage</th><th>commit</th><th class="num-h">received</th>
-          <th class="num-h">valid</th><th class="num-h">quar.</th>
-          <th class="num-h">upserted</th><th class="num-h">API</th><th class="num-h">time</th></tr>
+      <tr><th>Flag</th><th class="num-h">Rows</th><th>What It Means</th></tr>
+      {flag_rows}
+    </table></div>
+    <p class="sub" style="max-width:78ch; margin-top:0.5rem">
+    <b>3 — The audit trail.</b> Every automatic update writes a row to the
+    ledger below: what came in, what passed, what changed, and the exact
+    software version that did the work. A run that changed nothing shows
+    <span class="mono">upserted 0</span> — proof the pipeline re-running is
+    harmless (engineers call this idempotency).</p>
+  </div>
+  <div class="card">
+    <h2>Run Ledger — Every Update, on the Record</h2>
+    <p class="sub">This page rebuilds itself twice a day. Newest first.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Run</th><th>Stage</th><th>Commit</th><th class="num-h">Received</th>
+          <th class="num-h">Valid</th><th class="num-h">Quar.</th>
+          <th class="num-h">Upserted</th><th class="num-h">API</th><th class="num-h">Time</th></tr>
       {ledger_rows}
     </table></div>
+  </div>
+</div>
+
+<div class="view" data-view="about">
+  <div class="viewhead">
+    <h1>Case Study — How GridPulse Was Built</h1>
+    <p>GridPulse is a portfolio data-engineering project by
+    <b>Erick Vanderpool</b>: a fully automated pipeline that turns the US
+    government's raw energy feed into the analysis you're reading — for
+    $0 a month in infrastructure.</p>
+  </div>
+  <div class="card">
+    <h2>The Numbers</h2>
+    <div class="stats">
+      <div class="stat"><div class="n">{cov["hours"]:,}</div><div class="l">Hours of Grid Data Held</div></div>
+      <div class="stat"><div class="n">359K</div><div class="l">Rows Through the Pipeline</div></div>
+      <div class="stat"><div class="n">{quality["quarantined"]}</div><div class="l">Rows Quarantined</div></div>
+      <div class="stat"><div class="n">83</div><div class="l">Automated Tests</div></div>
+      <div class="stat"><div class="n">2×/day</div><div class="l">Self-Refreshing Schedule</div></div>
+      <div class="stat"><div class="n">$0</div><div class="l">Monthly Infrastructure Cost</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>How It Works</h2>
+    <p class="sub" style="max-width:78ch">
+    Twice a day, an automated run pulls the newest hourly figures from the
+    <b>EIA open-data API</b> under a hard request budget, stores the raw
+    responses verbatim (so any bug can be replayed against the original
+    bytes), validates and quality-flags every record, converts everything
+    into clean tables, computes the metrics — renewable share, net load,
+    ramp rates — and recompiles this entire page with fresh findings. Raw
+    data is versioned on its own git branch; the page is pure static HTML
+    with all analysis precomputed, which is why it loads instantly and
+    needs no server.</p>
+  </div>
+  <div class="card">
+    <h2>Engineering Practices on Display</h2>
+    <ul class="findings">
+      <li><b>Measured, not asserted</b> — retrieval quality, idempotency, and
+      every derived metric are pinned by automated tests (83 and counting).</li>
+      <li><b>Sequential adversarial reviews</b> — each build phase was
+      attacked by independent review passes; 40+ findings were fixed and
+      pinned as regression tests.</li>
+      <li><b>A written data-quality policy</b> — odd values are flagged and
+      kept, failures are quarantined with reasons, and the run ledger makes
+      every update auditable to the commit.</li>
+      <li><b>Swappable engines</b> — the metric layer runs on Polars or
+      pandas behind one contract, verified byte-identical across the full
+      dataset.</li>
+      <li><b>Two deliberate surfaces</b> — this designed product page, and a
+      functional internal tool (Streamlit) with an AI analyst grounded in
+      read-only SQL.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Explore Further</h2>
+    <div class="chips">
+      <a class="cta" href="https://github.com/evanderpool/gridpulse"
+         target="_blank" rel="noopener">Source Code &amp; Docs ↗</a>
+      <a class="cta" href="https://evanderpool.github.io/artificial-management/"
+         target="_blank" rel="noopener">More Projects ↗</a>
+    </div>
   </div>
 </div>
 
@@ -604,9 +821,9 @@ def build_report(conn: sqlite3.Connection) -> str:
 <div class="overlay" id="glossary">
   <div class="panel">
     <button class="close">✕</button>
-    <h2>How to read this site</h2>
+    <h2>How to Read This Site</h2>
     <div class="tablewrap"><table>
-      <tr><th>Region</th><th>Who that is</th></tr>
+      <tr><th>Region</th><th>Who That Is</th></tr>
       <tr><td><b>California</b></td><td>the California grid (operator: CAISO) —
         about 32 million people</td></tr>
       <tr><td><b>Texas</b></td><td>the Texas grid (operator: ERCOT) — about 27
@@ -624,7 +841,7 @@ def build_report(conn: sqlite3.Connection) -> str:
     and solar.<br>
     <b>Net load</b> — what conventional power plants (gas, nuclear, coal,
     hydro) must supply after wind and solar have done their part; its midday
-    sag and sunset surge is the famous "duck curve".<br>
+    sag and sunset surge is the famous duck curve.<br>
     <b>Times</b> — all clocks are UTC: subtract 4 hours for Eastern time, 7
     for Pacific.</p>
     <p class="sub">Data: US Energy Information Administration (EIA) ·
@@ -634,18 +851,12 @@ def build_report(conn: sqlite3.Connection) -> str:
   </div>
 </div>
 
-<footer>gridpulse v{__version__} · generated {generated} ·
+<footer>GridPulse v{__version__} · generated {generated} ·
 <a href="https://github.com/evanderpool/gridpulse">source &amp; docs</a> ·
 data: US Energy Information Administration (EIA) open-data API v2 ·
-built by Erick Vanderpool</footer>
-<script>{JS.replace("__DATA__", data_json)}
-// The renewables view reuses the share chart with its own mount.
-(function(){{
-  const orig = renderAll;
-  renderAll = function(){{ orig(); renderTrend("trend-share2", 2, "%"); }};
-  renderTrend("trend-share2", 2, "%");
-}})();
-</script>
+built by Erick Vanderpool · animation: GSAP (vendored)</footer>
+<script>{_gsap_source()}</script>
+<script>{JS.replace("__DATA__", data_json)}</script>
 </body></html>'''
 
 

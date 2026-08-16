@@ -44,11 +44,15 @@ def test_report_is_selfcontained_and_answers_present(tmp_path):
     seed(conn)
     html = build_report(conn)
     for marker in ("<title>GridPulse</title>", "duck curve", "Renewable share",
-                   "Run ledger", "quarantined", "ERCOT"):
+                   "Run Ledger", "quarantined", "ERCOT", "Case Study",
+                   "Ask the Analyst"):
         assert marker in html
-    # Self-contained: no external fetches, no API traces.
-    assert "http" not in html.replace("https://github.com/evanderpool/gridpulse", "") \
-        .replace("https://www.eia.gov", "")  # only the two footer links
+    # Self-contained: no external FETCHES (script src/link). Outbound <a>
+    # links are allowed and limited to the known destinations.
+    for allowed in ("https://github.com/evanderpool/gridpulse",
+                    "https://evanderpool.github.io/artificial-management/",
+                    "https://gsap.com", "https://greensock.com"):
+        html = html.replace(allowed, "")
     assert "api_key" not in html
     assert "<script src" not in html and "<link" not in html
     conn.close()

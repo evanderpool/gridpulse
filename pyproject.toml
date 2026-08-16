@@ -32,7 +32,7 @@ Repository = "https://github.com/evanderpool/gridpulse"
 where = ["src"]
 
 [tool.setuptools.package-data]
-gridpulse = ["py.typed"]
+gridpulse = ["py.typed", "assets/*.js"]
 
 [tool.ruff]
 line-length = 100
