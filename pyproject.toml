@@ -47,6 +47,8 @@ select = ["E", "F", "I", "W"]
 # report.py embeds the page's JavaScript as string constants; JS template
 # literals don't wrap at Python's line length without changing readability.
 "src/gridpulse/report.py" = ["E501"]
+# The app embeds the analyst's prose prompt/schema doc as long strings.
+"app/dashboard.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

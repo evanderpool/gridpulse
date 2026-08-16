@@ -81,6 +81,88 @@ def fmt_delta(value: float | None, unit: str = "%") -> str:
     return f"{arrow} {abs(value):.1f}{unit}"
 
 
+DB_SCHEMA_DOC = """Tables in the gridpulse SQLite database (all times UTC ISO strings like '2026-08-13T18:00:00+00:00'):
+- demand_hourly(region, period_utc, demand_mwh, quality_flags, fetched_at): hourly electricity demand. region is one of CISO (California/CAISO), ERCO (Texas/ERCOT), MISO (Midwest), PJM (Mid-Atlantic).
+- fuelmix_hourly(region, period_utc, fueltype, generation_mwh, quality_flags, fetched_at): hourly generation by fuel. fueltype examples: SUN solar, WND wind, NG natural gas, NUC nuclear, COL coal, WAT hydro, BAT battery, GEO geothermal, OIL petroleum, OTH other. Negative BAT = batteries charging; small negative SUN at night = panels drawing station power.
+- metrics_hourly(region, period_utc, renewable_share, net_load_mwh, ramp_mwh_per_h): renewable_share is 0..1 (wind+solar / total generation); net_load = demand minus wind and solar; ramp = net-load change vs previous hour.
+- pipeline_runs(run_id, stage, started_at, git_sha, rows_received, rows_valid, rows_quarantined, rows_upserted, api_calls, runtime_seconds): the pipeline's own audit ledger.
+Coverage: roughly July 2025 to now. Use substr(period_utc,1,7) for months, substr(period_utc,12,2) for hour of day."""
+
+ANALYST_SYSTEM = """You are the GridPulse data analyst. You answer questions about US electricity data by querying a SQLite database with the run_sql tool, then explaining what you found in plain, friendly language for a non-technical reader.
+
+Rules:
+- Ground EVERY claim in query results from this database. Never use outside knowledge for numbers. If the data can't answer the question, say exactly what's missing.
+- Call regions by place names (California, Texas, Midwest, Mid-Atlantic), not codes.
+- Make numbers relatable: values are MWh; 1 GWh (1,000 MWh) is roughly one hour of power for 750,000 homes. Times are UTC (Eastern is 4 hours behind, Pacific 7).
+- Run at most a few focused queries (aggregate in SQL — averages, sums, group-bys — rather than pulling raw rows).
+- Answer in under 200 words unless the question truly needs more. Lead with the answer, then the supporting numbers.
+
+""" + DB_SCHEMA_DOC
+
+FORBIDDEN_SQL = ("insert", "update", "delete", "drop", "create", "alter",
+                 "attach", "pragma", "vacuum", "replace")
+
+
+def run_sql_readonly(query: str) -> tuple[str, int]:
+    """Execute one read-only SELECT with defense in depth; returns (text, rows)."""
+    q = query.strip().rstrip(";")
+    lowered = q.lower()
+    if not (lowered.startswith("select") or lowered.startswith("with")):
+        return "ERROR: only SELECT/WITH queries are allowed.", 0
+    if any(f" {w} " in f" {lowered} " or lowered.startswith(w) for w in FORBIDDEN_SQL):
+        return "ERROR: write/DDL keywords are not allowed.", 0
+    if ";" in q:
+        return "ERROR: one statement per query.", 0
+    path = Path(tempfile.gettempdir()) / "gridpulse.db"
+    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
+    try:
+        cur = conn.execute(q)
+        cols = [c[0] for c in cur.description]
+        rows = cur.fetchmany(200)
+    except sqlite3.Error as exc:
+        return f"ERROR: {exc}", 0
+    finally:
+        conn.close()
+    lines = ["\t".join(cols)] + ["\t".join(str(v) for v in r) for r in rows]
+    return "\n".join(lines)[:8000], len(rows)
+
+
+@st.cache_data(ttl=3600, show_spinner="The analyst is researching your question…")
+def ask_analyst(api_key: str, question: str) -> tuple[str, list]:
+    """Tool-use loop: Claude researches via read-only SQL, then answers."""
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=api_key)
+    tools = [{
+        "name": "run_sql",
+        "description": "Run one read-only SQL SELECT against the gridpulse "
+                       "database. Returns tab-separated rows (max 200).",
+        "input_schema": {"type": "object", "required": ["query"],
+                         "properties": {"query": {"type": "string"}}},
+    }]
+    messages = [{"role": "user", "content": question}]
+    queries: list[tuple[str, int]] = []
+    for _ in range(6):
+        resp = client.messages.create(
+            model="claude-sonnet-5", max_tokens=1200,
+            system=ANALYST_SYSTEM, tools=tools, messages=messages)
+        if resp.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": resp.content})
+            results = []
+            for block in resp.content:
+                if block.type == "tool_use":
+                    text, nrows = run_sql_readonly(block.input.get("query", ""))
+                    queries.append((block.input.get("query", ""), nrows))
+                    results.append({"type": "tool_result",
+                                    "tool_use_id": block.id, "content": text})
+            messages.append({"role": "user", "content": results})
+            continue
+        answer = "".join(b.text for b in resp.content if b.type == "text")
+        return answer, queries
+    return ("The analyst hit its research-step limit before finishing — "
+            "try a more specific question."), queries
+
+
 data = load_tables()
 metrics_all, demand_all = data["metrics"], data["demand"]
 cov_start, cov_end = demand_all["period_utc"].min(), demand_all["period_utc"].max()
@@ -140,9 +222,9 @@ metrics = in_window(metrics_all[metrics_all["region"].isin(regions)], w_start, w
 prev_start, prev_end = w_start - (w_end - w_start), w_start
 yoy_start, yoy_end = w_start - timedelta(days=365), w_end - timedelta(days=365)
 
-tab_find, tab_trend, tab_duck, tab_profile, tab_quality = st.tabs(
+tab_find, tab_trend, tab_duck, tab_profile, tab_ask, tab_quality = st.tabs(
     ["📋 What the data says", "📈 Usage & renewables", "🦆 The duck curve",
-     "🕐 A typical day", "✅ Data checks"])
+     "🕐 A typical day", "🤖 Ask the AI analyst", "✅ Data checks"])
 
 # ---------- Findings: deterministic auto-analysis ----------
 with tab_find:
@@ -286,6 +368,51 @@ with tab_profile:
         "Change the window to see seasonal shift in the shape.")
 
 # ---------- Data quality ----------
+with tab_ask:
+    st.subheader("Ask the AI analyst")
+    st.caption(
+        "Type any question about this data. The AI researches it by running "
+        "real read-only SQL queries against the pipeline's database, then "
+        "answers in plain language — and shows you every query it ran, so "
+        "the answer is fully auditable. Answers are AI-generated and "
+        "grounded only in this database.")
+    import importlib.util
+    import os as _os
+    _anthropic_ok = importlib.util.find_spec("anthropic") is not None
+    try:
+        api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+    except Exception:
+        # No secrets.toml at all (e.g. local run) — fall through to env.
+        api_key = ""
+    api_key = api_key or _os.environ.get("ANTHROPIC_API_KEY", "")
+    if not _anthropic_ok or not api_key:
+        st.info(
+            "This feature needs an Anthropic API key. App owner: add "
+            "`ANTHROPIC_API_KEY` in the Streamlit app's **Settings → Secrets** "
+            "(set a monthly spend cap on the key — each question costs a few "
+            "cents).")
+    else:
+        st.session_state.setdefault("ask_count", 0)
+        question = st.text_input(
+            "Your question", max_chars=300,
+            placeholder="e.g. Which month had Texas's highest demand, and how "
+                        "did wind do that month?")
+        if question and st.session_state.ask_count >= 10:
+            st.warning("Question limit reached for this session (10) — "
+                       "refresh the page to start a new session.")
+        elif question:
+            st.session_state.ask_count += 1
+            answer, queries = ask_analyst(api_key, question)
+            st.markdown(answer)
+            with st.expander(f"🔍 The {len(queries)} SQL quer"
+                             f"{'y' if len(queries) == 1 else 'ies'} the AI ran"):
+                for q, nrows in queries:
+                    st.code(q, language="sql")
+                    st.caption(f"→ {nrows} rows")
+            st.caption("AI-generated analysis (Claude), grounded only in the "
+                       "pipeline database. Verify anything important against "
+                       "the charts and CSV exports.")
+
 with tab_quality:
     st.subheader("Data checks — is this data trustworthy?")
     st.caption("Every incoming number is checked. Odd-but-real values are "
