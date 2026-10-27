@@ -629,6 +629,15 @@ def build_report(conn: sqlite3.Connection) -> str:
     return f'''<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GridPulse</title>
+<meta name="description" content="The US grid, live: electricity use and the wind and solar share in California, Texas, the Midwest and the Mid-Atlantic, refreshed twice a day from EIA open data. By Erick Vanderpool.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="GridPulse">
+<meta property="og:title" content="GridPulse: the US grid, live">
+<meta property="og:description" content="Electricity use and the wind and solar share in California, Texas, the Midwest and the Mid-Atlantic, refreshed twice a day from EIA open data. By Erick Vanderpool.">
+<meta property="og:url" content="https://evanderpool.github.io/gridpulse/">
+<meta property="og:image" content="https://evanderpool.github.io/gridpulse/og-image.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="GridPulse overview: average hourly use by region and the top findings">
+<meta name="twitter:card" content="summary_large_image">
 <style>{CSS}</style></head><body>
 
 <div class="topbar">

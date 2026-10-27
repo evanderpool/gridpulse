@@ -47,6 +47,8 @@ jobs:
       - run: python -m gridpulse transform
       - run: python -m gridpulse derive
       - run: python -m gridpulse report --out _site/index.html
+      # The link-preview picture the report's og:image points at.
+      - run: cp assets/og-image.jpg _site/og-image.jpg
       - name: Commit data branch
         run: |
           cd data
